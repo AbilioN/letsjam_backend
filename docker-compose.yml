@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Serviço da aplicação Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lestjam_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - lestjam_network
+    depends_on:
+      - db
+      - redis
+
+  # Servidor web Nginx
+  webserver:
+    image: nginx:alpine
+    container_name: lestjam_nginx
+    restart: unless-stopped
+    ports:
+      - "8006:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - lestjam_network
+    depends_on:
+      - app
+
+  # Banco de dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: lestjam_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-lestjam}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_USER: ${DB_USERNAME:-lestjam}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - lestjam_network
+
+  # Redis para cache e sessões
+  redis:
+    image: redis:alpine
+    container_name: lestjam_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - lestjam_network
+
+  # Queue Worker (opcional)
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lestjam_queue
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - lestjam_network
+    depends_on:
+      - db
+      - redis
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+
+networks:
+  lestjam_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local 
