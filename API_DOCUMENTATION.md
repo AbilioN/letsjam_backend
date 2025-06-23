@@ -42,13 +42,44 @@ Content-Type: application/json
 }
 ```
 
+### Registro
+**POST** `/register`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "password": "password123",
+    "password_confirmation": "password123"
+}
+```
+
+**Resposta de Sucesso (201):**
+```json
+{
+    "user": {
+        "id": 2,
+        "name": "João Silva",
+        "email": "joao@email.com"
+    },
+    "token": "2|Bv5o4huCtdD88JsxVk9PmzzD2fWRd7KLzGpEzDyF7435d5ee"
+}
+```
+
 **Resposta de Validação (422):**
 ```json
 {
     "message": "The given data was invalid.",
     "errors": {
-        "email": ["The email field is required."],
-        "password": ["The password field is required."]
+        "name": ["O nome é obrigatório."],
+        "email": ["O email deve ser válido."],
+        "password": ["A confirmação da senha não confere."]
     }
 }
 ```
@@ -63,7 +94,7 @@ Content-Type: application/json
 
 ## Exemplos de Uso
 
-### JavaScript/Fetch
+### JavaScript/Fetch - Login
 ```javascript
 const loginUser = async (email, password) => {
     try {
@@ -95,17 +126,42 @@ const loginUser = async (email, password) => {
         throw error;
     }
 };
+```
 
-// Exemplo de uso
-loginUser('user@email.com', 'password123')
-    .then(data => {
-        // Salvar token no localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-    })
-    .catch(error => {
-        console.error('Falha no login:', error);
-    });
+### JavaScript/Fetch - Registro
+```javascript
+const registerUser = async (name, email, password, passwordConfirmation) => {
+    try {
+        const response = await fetch('http://localhost:8006/api/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                password: password,
+                password_confirmation: passwordConfirmation
+            })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Registro bem-sucedido
+            console.log('Token:', data.token);
+            console.log('Usuário:', data.user);
+            return data;
+        } else {
+            // Erro de registro
+            console.error('Erro:', data.message);
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        throw error;
+    }
+};
 ```
 
 ### Axios
@@ -131,13 +187,38 @@ const loginUser = async (email, password) => {
         throw error;
     }
 };
+
+const registerUser = async (name, email, password, passwordConfirmation) => {
+    try {
+        const response = await api.post('/register', {
+            name: name,
+            email: email,
+            password: password,
+            password_confirmation: passwordConfirmation
+        });
+        
+        return response.data;
+    } catch (error) {
+        if (error.response) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+};
 ```
 
-### cURL
+### cURL - Login
 ```bash
 curl -X POST http://localhost:8006/api/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"user@email.com","password":"password123"}'
+```
+
+### cURL - Registro
+```bash
+curl -X POST http://localhost:8006/api/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"João Silva","email":"joao@email.com","password":"password123","password_confirmation":"password123"}'
 ```
 
 ## Scripts Úteis

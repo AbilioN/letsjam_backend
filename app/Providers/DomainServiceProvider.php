@@ -6,6 +6,8 @@ use App\Domain\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Repositories\EloquentUserRepository;
 use App\Domain\Services\AuthServiceInterface;
 use App\Infrastructure\Services\AuthService;
+use App\Domain\Services\RegistrationServiceInterface;
+use App\Infrastructure\Services\RegistrationService;
 
 class DomainServiceProvider extends ServiceProvider
 {
@@ -16,6 +18,7 @@ class DomainServiceProvider extends ServiceProvider
         
         // Services
         $this->app->bind(AuthServiceInterface::class, AuthService::class);
+        $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
     }
 
     public function boot(): void
