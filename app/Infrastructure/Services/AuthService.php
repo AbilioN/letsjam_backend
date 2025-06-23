@@ -6,6 +6,7 @@ use App\Domain\Entities\User;
 use App\Domain\Services\AuthServiceInterface;
 use App\Domain\Repositories\UserRepositoryInterface;
 use App\Domain\Exceptions\AuthenticationException;
+use App\Models\User as UserModel;
 
 class AuthService implements AuthServiceInterface
 {
@@ -26,7 +27,14 @@ class AuthService implements AuthServiceInterface
 
     public function generateToken(User $user): string
     {
-        // Implementação usando Sanctum, JWT, etc.
-        return $user->createToken('api')->plainTextToken;
+        // Buscar o modelo Eloquent para usar Sanctum
+        $userModel = UserModel::find($user->id);
+        
+        if (!$userModel) {
+            throw new AuthenticationException('User model not found');
+        }
+
+        // Gerar token usando Sanctum
+        return $userModel->createToken('api')->plainTextToken;
     }
 }

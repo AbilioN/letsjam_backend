@@ -18,7 +18,7 @@ class User
 
     public function generateToken(): string
     {
-        // Lógica de geração de token (pode ser movida para um service)
+        // Lógica simples de geração de token para o Domain
         return md5($this->email . time());
     }
 }

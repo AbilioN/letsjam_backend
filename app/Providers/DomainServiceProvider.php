@@ -9,12 +9,17 @@ use App\Infrastructure\Services\AuthService;
 
 class DomainServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
         // Repositories
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
         
         // Services
         $this->app->bind(AuthServiceInterface::class, AuthService::class);
+    }
+
+    public function boot(): void
+    {
+        //
     }
 }
