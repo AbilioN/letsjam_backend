@@ -21,6 +21,11 @@ RUN pecl install redis && docker-php-ext-enable redis
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Criar usuário para a aplicação
+RUN useradd -G www-data,root -u 1000 -d /home/akerfeels akerfeels
+RUN mkdir -p /home/akerfeels/.composer && \
+    chown -R akerfeels:akerfeels /home/akerfeels
+
 # Definir diretório de trabalho
 WORKDIR /var/www
 
@@ -37,9 +42,12 @@ RUN npm install
 RUN npm run build
 
 # Definir permissões
-RUN chown -R www-data:www-data /var/www \
+RUN chown -R akerfeels:akerfeels /var/www \
     && chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
+
+# Mudar para o usuário akerfeels
+USER akerfeels
 
 # Expor porta 9000
 EXPOSE 9000

@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Auth\VerifyEmailController;
+use App\Http\Controllers\Api\Auth\ResendVerificationCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,4 +24,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Auth routes
 Route::post('/login', LoginController::class);
-Route::post('/register', RegisterController::class); 
+Route::post('/register', RegisterController::class);
+Route::post('/verify-email', VerifyEmailController::class);
+Route::post('/resend-verification-code', ResendVerificationCodeController::class); 

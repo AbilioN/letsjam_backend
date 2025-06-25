@@ -4,6 +4,7 @@ namespace App\Infrastructure\Services;
 
 use App\Domain\Entities\User;
 use App\Domain\Services\RegistrationServiceInterface;
+use App\Domain\Services\EmailVerificationServiceInterface;
 use App\Domain\Repositories\UserRepositoryInterface;
 use App\Domain\Exceptions\RegistrationException;
 use App\Models\User as UserModel;
@@ -12,7 +13,8 @@ use Illuminate\Support\Facades\Hash;
 class RegistrationService implements RegistrationServiceInterface
 {
     public function __construct(
-        private UserRepositoryInterface $userRepository
+        private UserRepositoryInterface $userRepository,
+        private EmailVerificationServiceInterface $emailVerificationService
     ) {}
 
     public function register(string $name, string $email, string $password): User
@@ -33,7 +35,12 @@ class RegistrationService implements RegistrationServiceInterface
         );
 
         // Salvar no repositório
-        return $this->userRepository->save($user);
+        $savedUser = $this->userRepository->save($user);
+
+        // Enviar código de verificação
+        $this->emailVerificationService->sendVerificationCode($savedUser);
+
+        return $savedUser;
     }
 
     public function generateToken(User $user): string
