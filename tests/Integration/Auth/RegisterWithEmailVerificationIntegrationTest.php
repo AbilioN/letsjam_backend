@@ -72,9 +72,9 @@ class RegisterWithEmailVerificationIntegrationTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson([
-                'message' => 'Este email já está em uso.',
+                'message' => 'This email is already in use.',
                 'errors' => [
-                    'email' => ['Este email já está em uso.']
+                    'email' => ['This email is already in use.']
                 ]
             ]);
     }

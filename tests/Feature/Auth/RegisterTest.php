@@ -65,7 +65,15 @@ class RegisterTest extends TestCase
 
         // Assert
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['email'])
+            ->assertJson([
+                'message' => 'This email is already in use.',
+                'errors' => [
+                    'email' => [
+                        'This email is already in use.'
+                    ]
+                ]
+            ]);
     }
 
     public function test_user_cannot_register_without_name()

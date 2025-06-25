@@ -78,9 +78,31 @@ Content-Type: application/json
 {
     "message": "The given data was invalid.",
     "errors": {
-        "name": ["The name field is required."],
-        "email": ["The email must be a valid email address."],
-        "password": ["The password confirmation does not match."]
+        "name": [
+            "The name field is required."
+        ],
+        "email": [
+            "The email field is required.",
+            "The email must be a valid email address.",
+            "This email is already in use."
+        ],
+        "password": [
+            "The password field is required.",
+            "The password must be at least 8 characters.",
+            "The password confirmation does not match."
+        ]
+    }
+}
+```
+
+**Email Already in Use (422):**
+```json
+{
+    "message": "This email is already in use.",
+    "errors": {
+        "email": [
+            "This email is already in use."
+        ]
     }
 }
 ```
@@ -213,12 +235,24 @@ Content-Type: application/json
         "email": [
             "The email field is required.",
             "The email must be a valid email address.",
-            "The email has already been taken."
+            "This email is already in use."
         ],
         "password": [
             "The password field is required.",
             "The password must be at least 8 characters.",
             "The password confirmation does not match."
+        ]
+    }
+}
+```
+
+**Email Already in Use (422):**
+```json
+{
+    "message": "This email is already in use.",
+    "errors": {
+        "email": [
+            "This email is already in use."
         ]
     }
 }
