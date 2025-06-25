@@ -5,7 +5,7 @@
 http://localhost:8006/api
 ```
 
-## Autenticação
+## Authentication
 
 ### Login
 **POST** `/login`
@@ -23,26 +23,27 @@ Content-Type: application/json
 }
 ```
 
-**Resposta de Sucesso (200):**
+**Success Response (200):**
 ```json
 {
     "user": {
         "id": 1,
-        "name": "Usuário Teste",
-        "email": "user@email.com"
+        "name": "Test User",
+        "email": "user@email.com",
+        "email_verified_at": "2025-06-25 17:00:00" // or null if not verified
     },
     "token": "1|Au4n3gtBscC77IrxUj8OlyyC1eVQc6JKyFoDyCxE6324c4fd"
 }
 ```
 
-**Resposta de Erro (401):**
+**Error Response (401):**
 ```json
 {
-    "message": "Invalid credentials"
+    "message": "Invalid credentials" // or "Email not verified"
 }
 ```
 
-### Registro
+### Register
 **POST** `/register`
 
 **Headers:**
@@ -53,118 +54,189 @@ Content-Type: application/json
 **Body:**
 ```json
 {
-    "name": "João Silva",
-    "email": "joao@email.com",
+    "name": "John Doe",
+    "email": "john@email.com",
     "password": "password123",
     "password_confirmation": "password123"
 }
 ```
 
-**Resposta de Sucesso (201):**
+**Success Response (201):**
 ```json
 {
+    "message": "User registered successfully. Please check your email for verification code.",
     "user": {
         "id": 2,
-        "name": "João Silva",
-        "email": "joao@email.com"
-    },
-    "token": "2|Bv5o4huCtdD88JsxVk9PmzzD2fWRd7KLzGpEzDyF7435d5ee"
+        "name": "John Doe",
+        "email": "john@email.com"
+    }
 }
 ```
 
-**Resposta de Validação (422):**
+**Validation Error (422):**
 ```json
 {
     "message": "The given data was invalid.",
     "errors": {
-        "name": ["O nome é obrigatório."],
-        "email": ["O email deve ser válido."],
-        "password": ["A confirmação da senha não confere."]
+        "name": ["The name field is required."],
+        "email": ["The email must be a valid email address."],
+        "password": ["The password confirmation does not match."]
     }
 }
 ```
 
-## Usuários de Teste Disponíveis
+---
 
-| Email | Senha | Nome |
-|-------|-------|------|
-| user@email.com | password123 | Usuário Teste |
-| joao@email.com | password123 | João Silva |
-| maria@email.com | password123 | Maria Santos |
+## Email Verification
 
-## Exemplos de Uso
+### Verify Email
+**POST** `/verify-email`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "email": "user@email.com",
+    "code": "123456"
+}
+```
+
+**Success Response (200):**
+```json
+{
+    "message": "Email verified successfully",
+    "email": "user@email.com"
+}
+```
+
+**Error Response (422):**
+```json
+{
+    "message": "Invalid or expired verification code"
+}
+```
+
+### Resend Verification Code
+**POST** `/resend-verification-code`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "email": "user@email.com"
+}
+```
+
+**Success Response (200):**
+```json
+{
+    "message": "Verification code sent successfully",
+    "email": "user@email.com"
+}
+```
+
+**Error Response (422):**
+```json
+{
+    "message": "User not found" // or "Email already verified"
+}
+```
+
+---
+
+## Test Users
+
+| Email            | Password     | Name         |
+|------------------|-------------|--------------|
+| user@email.com   | password123 | Test User    |
+| john@email.com   | password123 | John Doe     |
+| maria@email.com  | password123 | Maria Santos |
+
+---
+
+## Example Usage
 
 ### JavaScript/Fetch - Login
 ```javascript
 const loginUser = async (email, password) => {
-    try {
-        const response = await fetch('http://localhost:8006/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Login bem-sucedido
-            console.log('Token:', data.token);
-            console.log('Usuário:', data.user);
-            return data;
-        } else {
-            // Erro de login
-            console.error('Erro:', data.message);
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error('Erro na requisição:', error);
-        throw error;
+    const response = await fetch('http://localhost:8006/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (response.ok) {
+        // Success
+        return data;
+    } else {
+        throw new Error(data.message);
     }
 };
 ```
 
-### JavaScript/Fetch - Registro
+### JavaScript/Fetch - Register
 ```javascript
 const registerUser = async (name, email, password, passwordConfirmation) => {
-    try {
-        const response = await fetch('http://localhost:8006/api/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: name,
-                email: email,
-                password: password,
-                password_confirmation: passwordConfirmation
-            })
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Registro bem-sucedido
-            console.log('Token:', data.token);
-            console.log('Usuário:', data.user);
-            return data;
-        } else {
-            // Erro de registro
-            console.error('Erro:', data.message);
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error('Erro na requisição:', error);
-        throw error;
+    const response = await fetch('http://localhost:8006/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirmation })
+    });
+    const data = await response.json();
+    if (response.ok) {
+        // Success
+        return data;
+    } else {
+        throw new Error(data.message);
     }
 };
 ```
 
-### Axios
+### JavaScript/Fetch - Verify Email
+```javascript
+const verifyEmail = async (email, code) => {
+    const response = await fetch('http://localhost:8006/api/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+    });
+    const data = await response.json();
+    if (response.ok) {
+        return data;
+    } else {
+        throw new Error(data.message);
+    }
+};
+```
+
+### JavaScript/Fetch - Resend Verification Code
+```javascript
+const resendVerificationCode = async (email) => {
+    const response = await fetch('http://localhost:8006/api/resend-verification-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    const data = await response.json();
+    if (response.ok) {
+        return data;
+    } else {
+        throw new Error(data.message);
+    }
+};
+```
+
+---
+
+### Axios Example
 ```javascript
 import axios from 'axios';
 
@@ -173,52 +245,29 @@ const api = axios.create({
 });
 
 const loginUser = async (email, password) => {
-    try {
-        const response = await api.post('/login', {
-            email: email,
-            password: password
-        });
-        
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data.message);
-        }
-        throw error;
-    }
+    const response = await api.post('/login', { email, password });
+    return response.data;
 };
 
 const registerUser = async (name, email, password, passwordConfirmation) => {
-    try {
-        const response = await api.post('/register', {
-            name: name,
-            email: email,
-            password: password,
-            password_confirmation: passwordConfirmation
-        });
-        
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data.message);
-        }
-        throw error;
-    }
+    const response = await api.post('/register', {
+        name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation
+    });
+    return response.data;
 };
-```
 
-### cURL - Login
-```bash
-curl -X POST http://localhost:8006/api/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"user@email.com","password":"password123"}'
-```
+const verifyEmail = async (email, code) => {
+    const response = await api.post('/verify-email', { email, code });
+    return response.data;
+};
 
-### cURL - Registro
-```bash
-curl -X POST http://localhost:8006/api/register \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"João Silva","email":"joao@email.com","password":"password123","password_confirmation":"password123"}'
+const resendVerificationCode = async (email) => {
+    const response = await api.post('/resend-verification-code', { email });
+    return response.data;
+};
 ```
 
 ## Scripts Úteis
