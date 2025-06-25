@@ -152,6 +152,142 @@ Content-Type: application/json
 
 ---
 
+## Example Response Objects
+
+### Login Response Objects
+
+**Successful Login (200):**
+```json
+{
+    "user": {
+        "id": 1,
+        "name": "Test User",
+        "email": "user@email.com",
+        "email_verified_at": "2025-06-25T17:00:00.000000Z",
+        "created_at": "2025-06-25T16:30:00.000000Z",
+        "updated_at": "2025-06-25T17:00:00.000000Z"
+    },
+    "token": "1|Au4n3gtBscC77IrxUj8OlyyC1eVQc6JKyFoDyCxE6324c4fd"
+}
+```
+
+**Login with Unverified Email (401):**
+```json
+{
+    "message": "Email not verified"
+}
+```
+
+**Invalid Credentials (401):**
+```json
+{
+    "message": "Invalid credentials"
+}
+```
+
+### Register Response Objects
+
+**Successful Registration (201):**
+```json
+{
+    "message": "User registered successfully. Please check your email for verification code.",
+    "user": {
+        "id": 2,
+        "name": "John Doe",
+        "email": "john@email.com",
+        "email_verified_at": null,
+        "created_at": "2025-06-25T18:00:00.000000Z",
+        "updated_at": "2025-06-25T18:00:00.000000Z"
+    }
+}
+```
+
+**Validation Errors (422):**
+```json
+{
+    "message": "The given data was invalid.",
+    "errors": {
+        "name": [
+            "The name field is required."
+        ],
+        "email": [
+            "The email field is required.",
+            "The email must be a valid email address.",
+            "The email has already been taken."
+        ],
+        "password": [
+            "The password field is required.",
+            "The password must be at least 8 characters.",
+            "The password confirmation does not match."
+        ]
+    }
+}
+```
+
+### Email Verification Response Objects
+
+**Successful Verification (200):**
+```json
+{
+    "message": "Email verified successfully",
+    "email": "user@email.com"
+}
+```
+
+**Invalid Code (422):**
+```json
+{
+    "message": "Invalid or expired verification code"
+}
+```
+
+**Missing Email (422):**
+```json
+{
+    "message": "The email field is required."
+}
+```
+
+**Missing Code (422):**
+```json
+{
+    "message": "The code field is required."
+}
+```
+
+### Resend Verification Code Response Objects
+
+**Successful Resend (200):**
+```json
+{
+    "message": "Verification code sent successfully",
+    "email": "user@email.com"
+}
+```
+
+**User Not Found (422):**
+```json
+{
+    "message": "User not found"
+}
+```
+
+**Email Already Verified (422):**
+```json
+{
+    "message": "Email already verified"
+}
+```
+
+**Missing Email (422):**
+```json
+{
+    "message": "The email field is required."
+}
+```
+
+---
+
 ## Test Users
 
 | Email            | Password     | Name         |
