@@ -71,9 +71,12 @@ class EmailVerificationService implements EmailVerificationServiceInterface
             throw new RegistrationException('User not found');
         }
 
-        // Invalidar códigos anteriores (que existiam antes do reenvio)
+        // Invalidar apenas os códigos que existiam antes do reenvio
+        $timestampBeforeResend = now();
+        
         EmailVerification::where('email', $email)
             ->whereNull('verified_at')
+            ->where('created_at', '<', $timestampBeforeResend)
             ->update(['verified_at' => now()]);
 
         // Enviar novo código
