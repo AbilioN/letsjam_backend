@@ -13,15 +13,14 @@ class RegisterUseCase
     public function execute(string $name, string $email, string $password): array
     {
         $user = $this->registrationService->register($name, $email, $password);
-        $token = $this->registrationService->generateToken($user);
 
         return [
+            'message' => 'User registered successfully. Please check your email for verification code.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email
-            ],
-            'token' => $token
+            ]
         ];
     }
 } 

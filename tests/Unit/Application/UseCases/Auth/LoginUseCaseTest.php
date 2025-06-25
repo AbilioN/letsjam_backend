@@ -60,7 +60,8 @@ class LoginUseCaseTest extends TestCase
         $this->assertEquals([
             'id' => 1,
             'name' => 'John Doe',
-            'email' => 'john@example.com'
+            'email' => 'john@example.com',
+            'email_verified_at' => null
         ], $result['user']);
         
         $this->assertEquals('valid-token-123', $result['token']);

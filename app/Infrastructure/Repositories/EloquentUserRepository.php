@@ -20,7 +20,8 @@ class EloquentUserRepository implements UserRepositoryInterface
             id: $userModel->id,
             name: $userModel->name,
             email: $userModel->email,
-            password: $userModel->password
+            password: $userModel->password,
+            emailVerifiedAt: $userModel->email_verified_at
         );
     }
 
@@ -30,7 +31,8 @@ class EloquentUserRepository implements UserRepositoryInterface
             ['email' => $user->email],
             [
                 'name' => $user->name,
-                'password' => $user->password
+                'password' => $user->password,
+                'email_verified_at' => $user->emailVerifiedAt
             ]
         );
 
@@ -38,7 +40,8 @@ class EloquentUserRepository implements UserRepositoryInterface
             id: $userModel->id,
             name: $userModel->name,
             email: $userModel->email,
-            password: $userModel->password
+            password: $userModel->password,
+            emailVerifiedAt: $userModel->email_verified_at
         );
     }
 }

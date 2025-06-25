@@ -27,43 +27,25 @@ class RegisterUseCaseTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_execute_returns_user_data_and_token_with_valid_data()
+    public function test_execute_returns_user_data_with_valid_data()
     {
-        // Arrange
-        $user = new User(
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: 'hashed_password'
-        );
-
-        $this->registrationService
-            ->shouldReceive('register')
-            ->with('John Doe', 'john@example.com', 'password123')
+        $mockRegistrationService = Mockery::mock(RegistrationServiceInterface::class);
+        $mockRegistrationService->shouldReceive('register')
             ->once()
-            ->andReturn($user);
+            ->andReturn(new User(1, 'John Doe', 'john@example.com', 'hashed-password'));
 
-        $this->registrationService
-            ->shouldReceive('generateToken')
-            ->with($user)
-            ->once()
-            ->andReturn('valid-token-123');
+        $useCase = new RegisterUseCase($mockRegistrationService);
 
-        // Act
-        $result = $this->registerUseCase->execute('John Doe', 'john@example.com', 'password123');
+        $result = $useCase->execute('John Doe', 'john@example.com', 'password123');
 
         // Assert
         $this->assertIsArray($result);
         $this->assertArrayHasKey('user', $result);
-        $this->assertArrayHasKey('token', $result);
-        
         $this->assertEquals([
             'id' => 1,
             'name' => 'John Doe',
-            'email' => 'john@example.com'
+            'email' => 'john@example.com',
         ], $result['user']);
-        
-        $this->assertEquals('valid-token-123', $result['token']);
     }
 
     public function test_execute_throws_exception_when_registration_fails()

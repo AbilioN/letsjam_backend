@@ -9,6 +9,7 @@ use App\Domain\Exceptions\RegistrationException;
 use App\Mail\EmailVerificationMail;
 use App\Models\EmailVerification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class EmailVerificationService implements EmailVerificationServiceInterface
@@ -36,13 +37,14 @@ class EmailVerificationService implements EmailVerificationServiceInterface
 
     public function verifyCode(string $email, string $code): bool
     {
+        // Buscar o código mais recente e não expirado
         $verification = EmailVerification::where('email', $email)
-            ->where('code', $code)
             ->where('expires_at', '>', now())
             ->whereNull('verified_at')
+            ->orderByDesc('created_at')
             ->first();
 
-        if (!$verification) {
+        if (!$verification || $verification->code !== $code) {
             return false;
         }
 
@@ -53,7 +55,9 @@ class EmailVerificationService implements EmailVerificationServiceInterface
         $user = $this->userRepository->findByEmail($email);
         if ($user) {
             $userModel = \App\Models\User::find($user->id);
-            $userModel->markEmailAsVerified();
+            if ($userModel) {
+                $userModel->markEmailAsVerified();
+            }
         }
 
         return true;
@@ -67,7 +71,7 @@ class EmailVerificationService implements EmailVerificationServiceInterface
             throw new RegistrationException('User not found');
         }
 
-        // Invalidar códigos anteriores
+        // Invalidar códigos anteriores (que existiam antes do reenvio)
         EmailVerification::where('email', $email)
             ->whereNull('verified_at')
             ->update(['verified_at' => now()]);

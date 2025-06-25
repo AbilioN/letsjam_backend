@@ -31,7 +31,6 @@ class RegisterTest extends TestCase
                     'name',
                     'email'
                 ],
-                'token'
             ])
             ->assertJson([
                 'user' => [
@@ -40,8 +39,6 @@ class RegisterTest extends TestCase
                 ]
             ]);
 
-        $this->assertNotEmpty($response->json('token'));
-        
         // Verify user was created in database
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',

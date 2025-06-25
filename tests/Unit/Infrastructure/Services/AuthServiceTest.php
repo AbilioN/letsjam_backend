@@ -33,27 +33,15 @@ class AuthServiceTest extends TestCase
 
     public function test_authenticate_returns_user_with_valid_credentials()
     {
-        // Arrange
-        $user = new User(
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            password: password_hash('password123', PASSWORD_DEFAULT)
-        );
+        $user = new User(1, 'John Doe', 'john@example.com', password_hash('password123', PASSWORD_DEFAULT), new \DateTime());
+        $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+        $mockRepo->shouldReceive('findByEmail')->with('john@example.com')->andReturn($user);
 
-        $this->userRepository
-            ->shouldReceive('findByEmail')
-            ->with('john@example.com')
-            ->once()
-            ->andReturn($user);
+        $service = new AuthService($mockRepo);
 
-        // Act
-        $result = $this->authService->authenticate('john@example.com', 'password123');
-
-        // Assert
+        $result = $service->authenticate('john@example.com', 'password123');
         $this->assertInstanceOf(User::class, $result);
-        $this->assertEquals($user->id, $result->id);
-        $this->assertEquals($user->email, $result->email);
+        $this->assertEquals('John Doe', $result->name);
     }
 
     public function test_authenticate_throws_exception_with_invalid_email()
@@ -114,5 +102,18 @@ class AuthServiceTest extends TestCase
         // Assert
         $this->assertIsString($token);
         $this->assertNotEmpty($token);
+    }
+
+    public function test_authenticate_throws_exception_for_unverified_user()
+    {
+        $user = new User(1, 'John Doe', 'john@example.com', password_hash('password123', PASSWORD_DEFAULT), null);
+        $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+        $mockRepo->shouldReceive('findByEmail')->with('john@example.com')->andReturn($user);
+
+        $service = new AuthService($mockRepo);
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('Email not verified');
+        $service->authenticate('john@example.com', 'password123');
     }
 } 

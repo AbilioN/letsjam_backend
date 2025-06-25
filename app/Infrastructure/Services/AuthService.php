@@ -22,6 +22,10 @@ class AuthService implements AuthServiceInterface
             throw new AuthenticationException();
         }
 
+        if (!$user->isEmailVerified()) {
+            throw new AuthenticationException('Email not verified');
+        }
+
         return $user;
     }
 

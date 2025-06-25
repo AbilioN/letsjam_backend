@@ -42,17 +42,4 @@ class RegistrationService implements RegistrationServiceInterface
 
         return $savedUser;
     }
-
-    public function generateToken(User $user): string
-    {
-        // Buscar o modelo Eloquent para usar Sanctum
-        $userModel = UserModel::find($user->id);
-        
-        if (!$userModel) {
-            throw new RegistrationException('User model not found');
-        }
-
-        // Gerar token usando Sanctum
-        return $userModel->createToken('api')->plainTextToken;
-    }
 } 
