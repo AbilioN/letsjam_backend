@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Auth\ResendVerificationCodeController;
 use App\Http\Controllers\Api\Auth\AdminLoginController;
 use App\Http\Controllers\Api\Auth\AdminRegisterController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,5 +40,7 @@ Route::prefix('admin')->group(function () {
     // Protected admin routes
     Route::middleware(['auth:sanctum', 'admin.auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
     });
 }); 

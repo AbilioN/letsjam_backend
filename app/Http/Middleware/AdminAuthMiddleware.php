@@ -23,9 +23,13 @@ class AdminAuthMiddleware
         }
 
         // Verificar se o usuário autenticado é um admin
-        $admin = Admin::find($user->id);
-        
-        if (!$admin || !$admin->isActive()) {
+        // Primeiro, verificar se o modelo é Admin
+        if (!$user instanceof Admin) {
+            return response()->json(['message' => 'Access denied. Admin privileges required.'], 403);
+        }
+
+        // Verificar se o admin está ativo
+        if (!$user->isActive()) {
             return response()->json(['message' => 'Access denied. Admin privileges required.'], 403);
         }
 
