@@ -15,6 +15,8 @@ use App\Domain\Repositories\AdminRepositoryInterface;
 use App\Infrastructure\Repositories\AdminRepository;
 use App\Domain\Services\AdminAuthServiceInterface;
 use App\Infrastructure\Services\AdminAuthService;
+use App\Domain\Repositories\MessageRepositoryInterface;
+use App\Infrastructure\Repositories\MessageRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
         // Admin dependencies
         $this->app->bind(AdminRepositoryInterface::class, AdminRepository::class);
         $this->app->bind(AdminAuthServiceInterface::class, AdminAuthService::class);
+
+        // Chat dependencies
+        $this->app->bind(MessageRepositoryInterface::class, MessageRepository::class);
     }
 
     /**
