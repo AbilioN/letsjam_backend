@@ -13,19 +13,20 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('chat_id');
             $table->text('content');
-            $table->enum('sender_type', ['user', 'admin']);
             $table->unsignedBigInteger('sender_id');
-            $table->unsignedBigInteger('receiver_id');
-            $table->enum('receiver_type', ['user', 'admin']);
+            $table->enum('sender_type', ['user', 'admin']);
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
             
+            // Chaves estrangeiras
+            $table->foreign('chat_id')->references('id')->on('chats')->onDelete('cascade');
+            
             // Índices para melhor performance
+            $table->index(['chat_id', 'created_at']);
             $table->index(['sender_type', 'sender_id']);
-            $table->index(['receiver_type', 'receiver_id']);
-            $table->index(['sender_id', 'receiver_id']);
             $table->index('created_at');
         });
     }

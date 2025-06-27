@@ -34,11 +34,14 @@ Route::post('/register', RegisterController::class);
 Route::post('/verify-email', VerifyEmailController::class);
 Route::post('/resend-verification-code', ResendVerificationCodeController::class);
 
-// Chat routes (para usuários e admins)
-Route::middleware('auth:sanctum')->prefix('chat')->group(function () {
-    Route::post('/send', [ChatController::class, 'sendMessage']);
-    Route::get('/conversation', [ChatController::class, 'getConversation']);
-    Route::get('/conversations', [ChatController::class, 'getConversations']);
+// Chat routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/chat/create-private', [ChatController::class, 'createPrivateChat']);
+    Route::post('/chat/create-group', [ChatController::class, 'createGroupChat']);
+    Route::post('/chat/send', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/{chatId}/send', [ChatController::class, 'sendMessageToChat']);
+    Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
+    Route::get('/chat/conversations', [ChatController::class, 'getConversations']);
 });
 
 // Admin Auth routes

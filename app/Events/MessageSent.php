@@ -15,7 +15,7 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public Message $message;
+    public $message;
 
     /**
      * Create a new event instance.
@@ -28,42 +28,26 @@ class MessageSent implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @return \Illuminate\Broadcasting\Channel
      */
-    public function broadcastOn(): array
+    public function broadcastOn()
     {
-        return [
-            new PrivateChannel('chat.' . $this->getChannelName()),
-        ];
+        return new PrivateChannel('chat.' . $this->message->chat_id);
     }
 
     /**
      * Get the data to broadcast.
      */
-    public function broadcastWith(): array
+    public function broadcastWith()
     {
         return [
-            'message' => [
-                'id' => $this->message->id,
-                'content' => $this->message->content,
-                'sender_type' => $this->message->sender_type,
-                'sender_id' => $this->message->sender_id,
-                'sender_name' => $this->message->sender->name,
-                'receiver_type' => $this->message->receiver_type,
-                'receiver_id' => $this->message->receiver_id,
-                'is_read' => $this->message->is_read,
-                'created_at' => $this->message->created_at->format('Y-m-d H:i:s'),
-            ]
+            'id' => $this->message->id,
+            'chat_id' => $this->message->chat_id,
+            'content' => $this->message->content,
+            'sender_type' => $this->message->sender_type,
+            'sender_id' => $this->message->sender_id,
+            'is_read' => $this->message->is_read,
+            'created_at' => $this->message->created_at->format('Y-m-d H:i:s')
         ];
-    }
-
-    /**
-     * Get the channel name for the chat.
-     */
-    private function getChannelName(): string
-    {
-        $participants = [$this->message->sender_id, $this->message->receiver_id];
-        sort($participants);
-        return implode('-', $participants);
     }
 }

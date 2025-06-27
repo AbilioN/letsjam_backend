@@ -8,23 +8,21 @@ use App\Models\Message as MessageModel;
 
 class MessageRepository implements MessageRepositoryInterface
 {
-    public function create(string $content, string $senderType, int $senderId, string $receiverType, int $receiverId): Message
+    public function create(int $chatId, string $content, string $senderType, int $senderId): Message
     {
         $messageModel = MessageModel::create([
+            'chat_id' => $chatId,
             'content' => $content,
             'sender_type' => $senderType,
             'sender_id' => $senderId,
-            'receiver_type' => $receiverType,
-            'receiver_id' => $receiverId,
         ]);
 
         return new Message(
             id: $messageModel->id,
+            chatId: $messageModel->chat_id,
             content: $messageModel->content,
             senderType: $messageModel->sender_type,
             senderId: $messageModel->sender_id,
-            receiverType: $messageModel->receiver_type,
-            receiverId: $messageModel->receiver_id,
             isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
@@ -42,11 +40,10 @@ class MessageRepository implements MessageRepositoryInterface
 
         return new Message(
             id: $messageModel->id,
+            chatId: $messageModel->chat_id,
             content: $messageModel->content,
             senderType: $messageModel->sender_type,
             senderId: $messageModel->sender_id,
-            receiverType: $messageModel->receiver_type,
-            receiverId: $messageModel->receiver_id,
             isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
@@ -54,23 +51,24 @@ class MessageRepository implements MessageRepositoryInterface
         );
     }
 
-    public function findConversation(int $user1Id, string $user1Type, int $user2Id, string $user2Type, int $page = 1, int $perPage = 50): array
+    public function getChatMessages(int $chatId, int $page = 1, int $perPage = 50): array
     {
-        $paginator = MessageModel::with(['sender', 'receiver'])
-            ->betweenUsers($user1Id, $user1Type, $user2Id, $user2Type)
+        $paginator = MessageModel::with(['sender', 'senderAdmin'])
+            ->where('chat_id', $chatId)
             ->orderBy('created_at', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $messages = $paginator->items();
         $messageEntities = array_map(function ($messageModel) {
+            $sender = $messageModel->sender ?? $messageModel->senderAdmin;
+            
             return [
                 'id' => $messageModel->id,
+                'chat_id' => $messageModel->chat_id,
                 'content' => $messageModel->content,
                 'sender_type' => $messageModel->sender_type,
                 'sender_id' => $messageModel->sender_id,
-                'sender_name' => $messageModel->sender->name,
-                'receiver_type' => $messageModel->receiver_type,
-                'receiver_id' => $messageModel->receiver_id,
+                'sender_name' => $sender ? $sender->name : 'Usuário',
                 'is_read' => (bool) $messageModel->is_read,
                 'read_at' => $messageModel->read_at?->format('Y-m-d H:i:s'),
                 'created_at' => $messageModel->created_at->format('Y-m-d H:i:s'),
@@ -98,39 +96,11 @@ class MessageRepository implements MessageRepositoryInterface
         ]);
     }
 
-    public function getUnreadCount(int $userId, string $userType): int
+    public function getUnreadCount(int $chatId, int $userId, string $userType): int
     {
-        return MessageModel::where('receiver_id', $userId)
-            ->where('receiver_type', $userType)
+        return MessageModel::where('chat_id', $chatId)
+            ->where('sender_id', '!=', $userId)
             ->where('is_read', false)
             ->count();
-    }
-
-    public function getConversations(int $userId, string $userType): array
-    {
-        $conversations = MessageModel::selectRaw('
-                CASE 
-                    WHEN sender_id = ? AND sender_type = ? THEN receiver_id
-                    ELSE sender_id
-                END as other_user_id,
-                CASE 
-                    WHEN sender_id = ? AND sender_type = ? THEN receiver_type
-                    ELSE sender_type
-                END as other_user_type,
-                MAX(created_at) as last_message_at,
-                COUNT(*) as message_count,
-                SUM(CASE WHEN receiver_id = ? AND receiver_type = ? AND is_read = 0 THEN 1 ELSE 0 END) as unread_count
-            ', [$userId, $userType, $userId, $userType, $userId, $userType])
-            ->where(function ($query) use ($userId, $userType) {
-                $query->where('sender_id', $userId)
-                    ->where('sender_type', $userType)
-                    ->orWhere('receiver_id', $userId)
-                    ->where('receiver_type', $userType);
-            })
-            ->groupBy('other_user_id', 'other_user_type')
-            ->orderBy('last_message_at', 'desc')
-            ->get();
-
-        return $conversations->toArray();
     }
 } 

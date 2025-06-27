@@ -36,7 +36,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AdminAuthServiceInterface::class, AdminAuthService::class);
 
         // Chat dependencies
-        $this->app->bind(MessageRepositoryInterface::class, MessageRepository::class);
+        $this->app->bind(\App\Domain\Repositories\ChatRepositoryInterface::class, \App\Infrastructure\Repositories\ChatRepository::class);
+        $this->app->bind(\App\Domain\Repositories\MessageRepositoryInterface::class, \App\Infrastructure\Repositories\MessageRepository::class);
     }
 
     /**

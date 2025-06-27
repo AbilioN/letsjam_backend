@@ -2,31 +2,21 @@
 
 namespace App\Application\UseCases\Chat;
 
-use App\Domain\Repositories\ChatRepositoryInterface;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Events\MessageSent;
 use App\Models\Message as MessageModel;
 
-class SendMessageUseCase
+class SendMessageToChatUseCase
 {
     public function __construct(
-        private ChatRepositoryInterface $chatRepository,
         private MessageRepositoryInterface $messageRepository
     ) {}
 
-    public function execute(string $content, string $senderType, int $senderId, int $otherUserId, string $otherUserType): array
+    public function execute(int $chatId, string $content, string $senderType, int $senderId): array
     {
-        // Busca ou cria o chat privado entre os dois usuários
-        $chat = $this->chatRepository->findOrCreatePrivateChat(
-            $senderId,
-            $senderType,
-            $otherUserId,
-            $otherUserType
-        );
-
-        // Cria a mensagem
+        // Cria a mensagem no chat específico
         $message = $this->messageRepository->create(
-            $chat->id,
+            $chatId,
             $content,
             $senderType,
             $senderId
@@ -39,11 +29,6 @@ class SendMessageUseCase
         MessageSent::dispatch($messageModel);
 
         return [
-            'chat' => [
-                'id' => $chat->id,
-                'type' => $chat->type,
-                'name' => $chat->name,
-            ],
             'message' => [
                 'id' => $message->id,
                 'chat_id' => $message->chatId,

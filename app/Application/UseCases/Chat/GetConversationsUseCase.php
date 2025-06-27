@@ -2,18 +2,16 @@
 
 namespace App\Application\UseCases\Chat;
 
-use App\Domain\Repositories\MessageRepositoryInterface;
+use App\Domain\Repositories\ChatRepositoryInterface;
 
 class GetConversationsUseCase
 {
     public function __construct(
-        private MessageRepositoryInterface $messageRepository
+        private ChatRepositoryInterface $chatRepository
     ) {}
 
-    public function execute(int $userId, string $userType): array
+    public function execute(int $userId, string $userType, int $page = 1, int $perPage = 20): array
     {
-        return [
-            'conversations' => $this->messageRepository->getConversations($userId, $userType)
-        ];
+        return $this->chatRepository->getUserChats($userId, $userType, $page, $perPage);
     }
 } 
