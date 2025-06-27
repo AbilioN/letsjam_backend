@@ -19,7 +19,7 @@ class AdminAuthMiddleware
         $user = $request->user();
         
         if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         // Verificar se o usuário autenticado é um admin
