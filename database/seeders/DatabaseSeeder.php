@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
 
         // Executar seeder de usuários de teste
         $this->call([
+            AdminSeeder::class,
+            // ChatSeeder::class,
             TestUserSeeder::class,
         ]);
     }

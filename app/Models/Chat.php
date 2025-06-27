@@ -30,8 +30,7 @@ class Chat extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'chat_user', 'chat_id', 'user_id')
-            ->wherePivot('user_type', 'user')
-            ->withPivot(['joined_at', 'last_read_at', 'is_active'])
+            ->withPivot(['user_type', 'joined_at', 'last_read_at', 'is_active'])
             ->withTimestamps();
     }
 
@@ -85,14 +84,13 @@ class Chat extends Model
     {
         // Busca um chat privado que contenha exatamente esses dois usuários
         $chat = self::where('type', 'private')
-            ->whereHas('users', function ($query) use ($user1Id, $user1Type, $user2Id, $user2Type) {
-                $query->where(function ($q) use ($user1Id, $user1Type) {
-                    $q->where('user_id', $user1Id)->where('user_type', $user1Type);
-                })->where(function ($q) use ($user2Id, $user2Type) {
-                    $q->where('user_id', $user2Id)->where('user_type', $user2Type);
-                });
+            ->whereHas('users', function ($query) use ($user1Id, $user1Type) {
+                $query->where('user_id', $user1Id)->where('user_type', $user1Type);
             })
-            ->whereDoesntHave('users', function ($query) use ($user1Id, $user1Type, $user2Id, $user2Type) {
+            ->whereHas('users', function ($query) use ($user2Id, $user2Type) {
+                $query->where('user_id', $user2Id)->where('user_type', $user2Type);
+            })
+            ->whereDoesntHave('users', function ($query) use ($user1Id, $user2Id) {
                 $query->whereNotIn('user_id', [$user1Id, $user2Id]);
             })
             ->first();

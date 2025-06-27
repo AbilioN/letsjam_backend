@@ -93,4 +93,63 @@ class CreateChatTest extends TestCase
             ->postJson('/api/chat/create-private', []);
         $response->assertStatus(422);
     }
+
+    public function test_returns_existing_private_chat_when_already_exists()
+    {
+        $token = $this->user1->createToken('test')->plainTextToken;
+        
+        // Primeira criação
+        $response1 = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin'
+            ]);
+        
+        $chatId1 = $response1->json('data.chat.id');
+        
+        // Segunda criação (deve retornar o mesmo chat)
+        $response2 = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin'
+            ]);
+        
+        $chatId2 = $response2->json('data.chat.id');
+        
+        // Verifica que o mesmo chat foi retornado
+        $this->assertEquals($chatId1, $chatId2);
+        
+        // Verifica que apenas um chat foi criado no banco
+        $this->assertDatabaseCount('chats', 1);
+    }
+
+    public function test_returns_existing_private_chat_from_other_user_perspective()
+    {
+        $token1 = $this->user1->createToken('test')->plainTextToken;
+        $token2 = $this->admin->createToken('test')->plainTextToken;
+        
+        // Criação pelo user1
+        $response1 = $this->withHeader('Authorization', 'Bearer ' . $token1)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin'
+            ]);
+        
+        $chatId1 = $response1->json('data.chat.id');
+        
+        // Busca pelo admin (deve retornar o mesmo chat)
+        $response2 = $this->withHeader('Authorization', 'Bearer ' . $token2)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->user1->id,
+                'other_user_type' => 'user'
+            ]);
+        
+        $chatId2 = $response2->json('data.chat.id');
+        
+        // Verifica que o mesmo chat foi retornado
+        $this->assertEquals($chatId1, $chatId2);
+        
+        // Verifica que apenas um chat foi criado no banco
+        $this->assertDatabaseCount('chats', 1);
+    }
 } 
