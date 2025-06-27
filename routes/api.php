@@ -59,4 +59,9 @@ Route::prefix('admin')->group(function () {
             Route::post('/send', [AdminChatController::class, 'sendMessageToUser']);
         });
     });
+});
+
+// Broadcast routes for private channels
+Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
 }); 

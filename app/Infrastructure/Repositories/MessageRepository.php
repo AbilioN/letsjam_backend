@@ -25,7 +25,7 @@ class MessageRepository implements MessageRepositoryInterface
             senderId: $messageModel->sender_id,
             receiverType: $messageModel->receiver_type,
             receiverId: $messageModel->receiver_id,
-            isRead: $messageModel->is_read,
+            isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
             updatedAt: $messageModel->updated_at
@@ -47,7 +47,7 @@ class MessageRepository implements MessageRepositoryInterface
             senderId: $messageModel->sender_id,
             receiverType: $messageModel->receiver_type,
             receiverId: $messageModel->receiver_id,
-            isRead: $messageModel->is_read,
+            isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
             updatedAt: $messageModel->updated_at
@@ -71,7 +71,7 @@ class MessageRepository implements MessageRepositoryInterface
                 'sender_name' => $messageModel->sender->name,
                 'receiver_type' => $messageModel->receiver_type,
                 'receiver_id' => $messageModel->receiver_id,
-                'is_read' => $messageModel->is_read,
+                'is_read' => (bool) $messageModel->is_read,
                 'read_at' => $messageModel->read_at?->format('Y-m-d H:i:s'),
                 'created_at' => $messageModel->created_at->format('Y-m-d H:i:s'),
             ];

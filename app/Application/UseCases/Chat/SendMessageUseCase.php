@@ -4,6 +4,7 @@ namespace App\Application\UseCases\Chat;
 
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Events\MessageSent;
+use App\Models\Message as MessageModel;
 
 class SendMessageUseCase
 {
@@ -21,8 +22,11 @@ class SendMessageUseCase
             $receiverId
         );
 
+        // Buscar o modelo Eloquent para o evento
+        $messageModel = MessageModel::find($message->id);
+        
         // Disparar evento para broadcast
-        MessageSent::dispatch($message);
+        MessageSent::dispatch($messageModel);
 
         return [
             'message' => [
