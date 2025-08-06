@@ -106,6 +106,9 @@ class Chat extends Model
             // Adiciona os participantes
             $chat->users()->attach($user1Id, ['user_type' => $user1Type]);
             $chat->users()->attach($user2Id, ['user_type' => $user2Type]);
+            $chat->name = $chat->users()->where('user_id', $user2Id)->first()->name;
+            $chat->save();
+            $chat->refresh();
         }
 
         return $chat;
