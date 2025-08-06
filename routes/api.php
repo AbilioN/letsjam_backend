@@ -60,6 +60,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/conversations', [AdminChatController::class, 'getConversations']);
             Route::get('/conversation', [AdminChatController::class, 'getConversationWithUser']);
             Route::post('/send', [AdminChatController::class, 'sendMessageToUser']);
+            Route::post('/create-private', [ChatController::class, 'createPrivateChat']);
         });
     });
 });
