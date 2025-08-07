@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Domain\Entities\Chat as ChatEntity;
 
 class Chat extends Model
 {
@@ -24,6 +25,34 @@ class Chat extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function toEntity(): ChatEntity
+    {
+        return new ChatEntity(
+            id: $this->id,
+            name: $this->name,
+            type: $this->type,
+            description: $this->description,
+            createdBy: $this->created_by,
+            createdByType: $this->created_by_type,
+            createdAt: $this->created_at,
+            updatedAt: $this->updated_at
+        );
+    }
+
+    public function toEntityFromUser(ChatUser $user): ChatEntity
+    {
+        return new ChatEntity(
+            id: $this->id,
+            name: $user->getName(),
+            type: $this->type,
+            description: $this->description,
+            createdBy: $user->getId(),
+            createdByType: $user->getType(),
+            createdAt: $this->created_at,
+            updatedAt: $this->updated_at
+        );
+    }
 
     /**
      * Relacionamento com usuários através da tabela pivot
@@ -135,6 +164,7 @@ class Chat extends Model
             $chat->addParticipant($user1);
             $chat->addParticipant($user2);
             $chat->name = $user2->getName();
+            $chat->description = '';
             $chat->save();
             $chat->refresh();
         }
@@ -244,4 +274,6 @@ class Chat extends Model
     {
         return $this->users()->wherePivot('is_active', true);
     }
+
+
 }

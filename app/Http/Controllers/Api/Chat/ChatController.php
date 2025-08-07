@@ -205,26 +205,39 @@ class ChatController extends Controller
 
     public function createPrivateChat(Request $request, CreatePrivateChatUseCase $useCase): JsonResponse
     {
-        $request->validate([
-            'other_user_id' => 'required|integer',
-            'other_user_type' => 'required|in:user,admin'
-        ]);
+        try {
+            DB::beginTransaction();
+            $request->validate([
+                'other_user_id' => 'required|integer',
+                'other_user_type' => 'required|in:user,admin'
+            ]);
+    
+            $user = $request->user();
+            $chatUser = ChatUserFactory::createFromModel($user);
+    
+            // Cria ChatUser para o outro usuário
+            $otherChatUser = ChatUserFactory::createFromChatUserData(
+                $request->other_user_id,
+                $request->other_user_type
+            );
 
-        $user = $request->user();
-        $chatUser = ChatUserFactory::createFromModel($user);
+    
+            $chat = $useCase->execute($chatUser, $otherChatUser);
+            DB::commit();   
+            return response()->json([
+                'success' => true, 
+                'data' => $chat->toDto()->toArray()
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            dd($e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
 
-        // Cria ChatUser para o outro usuário
-        $otherChatUser = ChatUserFactory::createFromChatUserData(
-            $request->other_user_id,
-            $request->other_user_type
-        );
 
-        $chat = $useCase->execute($chatUser, $otherChatUser);
-        
-        return response()->json([
-            'success' => true, 
-            'data' => $chat->toDto()->toArray()
-        ], 201);
     }
 
     public function createGroupChat(Request $request, CreateGroupChatUseCase $useCase): JsonResponse

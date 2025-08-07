@@ -12,17 +12,7 @@ class ChatRepository implements ChatRepositoryInterface
     public function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): Chat
     {
         $chatModel = ChatModel::findOrCreatePrivateChat($user1, $user2);
-        
-        return new Chat(
-            id: $chatModel->id,
-            name: $chatModel->name,
-            type: $chatModel->type,
-            description: $chatModel->description,
-            createdBy: $chatModel->created_by,
-            createdByType: $chatModel->created_by_type,
-            createdAt: $chatModel->created_at,
-            updatedAt: $chatModel->updated_at
-        );
+        return $chatModel->toEntityFromUser($user2);
     }
 
     public function findById(int $id): ?Chat
