@@ -11,7 +11,7 @@ class GetConversationsUseCase
         private ChatRepositoryInterface $chatRepository
     ) {}
 
-    public function execute(ChatUser $user, int $page = 1, int $perPage = 20): array
+    public function execute(ChatUser $user, int $page = 1, int $perPage = 20): \App\Application\DTOs\ChatListResponseDto
     {
         return $this->chatRepository->getUserChats($user, $page, $perPage);
     }

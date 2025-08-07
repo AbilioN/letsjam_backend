@@ -11,7 +11,7 @@ interface ChatRepositoryInterface
     
     public function findById(int $id): ?Chat;
     
-    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): array;
+    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): \App\Application\DTOs\ChatListResponseDto;
     
     public function createGroupChat(string $name, string $description, ChatUser $createdBy): Chat;
     

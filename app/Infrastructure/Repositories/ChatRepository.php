@@ -35,7 +35,23 @@ class ChatRepository implements ChatRepositoryInterface
         );
     }
 
-    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): array
+    /**
+     * Gets the list of chats for a user with pagination
+     * 
+     * @param ChatUser $user The user to get chats for
+     * @param int $page Page number (default: 1)
+     * @param int $perPage Items per page (default: 20)
+     * @return \App\Application\DTOs\ChatListResponseDto Returns a DTO containing:
+     *   - chats: array<\App\Application\DTOs\ChatListItemDto> List of chats
+     *   - pagination: \App\Application\DTOs\PaginationDto Pagination information
+     * 
+     * @example
+     * $response = $repository->getUserChats($user, 1, 20);
+     * $chats = $response->chats; // ChatListItemDto[]
+     * $pagination = $response->pagination; // PaginationDto
+     * $array = $response->toArray(); // array for JSON
+     */
+    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): \App\Application\DTOs\ChatListResponseDto
     {
         $paginator = ChatModel::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->getId())->where('user_type', $user->getType());
@@ -54,36 +70,40 @@ class ChatRepository implements ChatRepositoryInterface
                 ->where('is_read', false)
                 ->count();
 
-            return [
-                'id' => $chatModel->id,
-                'name' => $chatModel->name,
-                'type' => $chatModel->type,
-                'description' => $chatModel->description,
-                'last_message' => $lastMessage ? [
-                    'id' => $lastMessage->id,
-                    'content' => $lastMessage->content,
-                    'sender_type' => $lastMessage->sender_type,
-                    'sender_id' => $lastMessage->sender_id,
-                    'created_at' => $lastMessage->created_at->format('Y-m-d H:i:s'),
-                ] : null,
-                'unread_count' => $unreadCount,
-                'participants_count' => $chatModel->users->count(),
-                'created_at' => $chatModel->created_at->format('Y-m-d H:i:s'),
-                'updated_at' => $chatModel->updated_at->format('Y-m-d H:i:s'),
-            ];
+            $lastMessageDto = $lastMessage ? new \App\Application\DTOs\LastMessageDto(
+                id: $lastMessage->id,
+                content: $lastMessage->content,
+                senderType: $lastMessage->sender_type,
+                senderId: $lastMessage->sender_id,
+                createdAt: $lastMessage->created_at->format('Y-m-d H:i:s')
+            ) : null;
+
+            return new \App\Application\DTOs\ChatListItemDto(
+                id: $chatModel->id,
+                name: $chatModel->name ?? $chatModel->users->first()->name,
+                type: $chatModel->type,
+                description: $chatModel->description ?? '',
+                lastMessage: $lastMessageDto,
+                unreadCount: $unreadCount,
+                participantsCount: $chatModel->users->count(),
+                createdAt: $chatModel->created_at->format('Y-m-d H:i:s'),
+                updatedAt: $chatModel->updated_at->format('Y-m-d H:i:s')
+            );
         }, $chats);
 
-        return [
-            'chats' => $chatEntities,
-            'pagination' => [
-                'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem()
-            ]
-        ];
+        $paginationDto = new \App\Application\DTOs\PaginationDto(
+            currentPage: $paginator->currentPage(),
+            perPage: $paginator->perPage(),
+            total: $paginator->total(),
+            lastPage: $paginator->lastPage(),
+            from: $paginator->firstItem(),
+            to: $paginator->lastItem()
+        );
+
+        return new \App\Application\DTOs\ChatListResponseDto(
+            chats: $chatEntities,
+            pagination: $paginationDto
+        );
     }
 
     public function createGroupChat(string $name, string $description, ChatUser $createdBy): Chat

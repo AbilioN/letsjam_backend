@@ -9,10 +9,8 @@ use App\Application\UseCases\Chat\GetConversationsUseCase;
 use App\Application\UseCases\Chat\CreatePrivateChatUseCase;
 use App\Application\UseCases\Chat\CreateGroupChatUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
-use App\Domain\Entities\ChatUser;
 use App\Domain\Entities\ChatUserFactory;
 use App\Models\Chat;
-use App\Models\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -197,10 +195,9 @@ class ChatController extends Controller
     {
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-
         $result = $getConversationsUseCase->execute($chatUser);
 
-        return response()->json($result, 200);
+        return response()->json($result->toArray(), 200);
     }
 
     public function createPrivateChat(Request $request, CreatePrivateChatUseCase $useCase): JsonResponse
@@ -230,7 +227,6 @@ class ChatController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
