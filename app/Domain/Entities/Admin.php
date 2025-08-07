@@ -4,7 +4,7 @@ namespace App\Domain\Entities;
 
 use DateTime;
 
-class Admin
+class Admin implements ChatUser
 {
     public function __construct(
         public readonly int $id,
@@ -30,4 +30,28 @@ class Admin
     {
         return $this->isActive;
     }
+
+    // Implementação da interface ChatUser
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getType(): string
+    {
+        return 'admin';
+    }
+
+    // O método isActive() já existe e é compatível com a interface
 } 

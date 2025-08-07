@@ -4,7 +4,7 @@ namespace App\Domain\Entities;
 
 use DateTime;
 
-class User
+class User implements ChatUser
 {
     public function __construct(
         public readonly int $id,
@@ -28,5 +28,32 @@ class User
     public function isEmailVerified(): bool
     {
         return !is_null($this->emailVerifiedAt);
+    }
+
+    // Implementação da interface ChatUser
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getType(): string
+    {
+        return 'user';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isEmailVerified();
     }
 }

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Domain\Entities\ChatUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Admin extends Authenticatable
+class Admin extends Authenticatable implements ChatUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -57,4 +58,28 @@ class Admin extends Authenticatable
     {
         $this->update(['last_login_at' => now()]);
     }
+
+    // Implementação da interface ChatUser
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getType(): string
+    {
+        return 'admin';
+    }
+
+    // O método isActive() já existe e é compatível com a interface
 }

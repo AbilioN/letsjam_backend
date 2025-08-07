@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Entities\ChatUser;
+use App\Domain\Entities\ChatUserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,7 +65,36 @@ class Message extends Model
     }
 
     /**
-     * Escopo para buscar mensagens entre dois usuários
+     * Obtém o ChatUser que enviou a mensagem
+     */
+    public function getSenderChatUser(): ?ChatUser
+    {
+        $senderType = $this->sender_type;
+        if (!$senderType) {
+            return null;
+        }
+
+        return ChatUserFactory::createFromChatUserData($this->sender_id, $senderType);
+    }
+
+    /**
+     * Escopo para buscar mensagens entre dois ChatUsers
+     */
+    public function scopeBetweenChatUsers($query, ChatUser $user1, ChatUser $user2)
+    {
+        return $query->whereHas('chat', function ($q) use ($user1, $user2) {
+            $q->where('type', 'private')
+                ->whereHas('users', function ($subQ) use ($user1) {
+                    $subQ->where('user_id', $user1->getId());
+                })
+                ->whereHas('users', function ($subQ) use ($user2) {
+                    $subQ->where('user_id', $user2->getId());
+                });
+        });
+    }
+
+    /**
+     * Escopo para buscar mensagens entre dois usuários (método de compatibilidade)
      */
     public function scopeBetweenUsers($query, int $user1Id, int $user2Id)
     {
@@ -76,6 +107,14 @@ class Message extends Model
                     $subQ->where('user_id', $user2Id);
                 });
         });
+    }
+
+    /**
+     * Verifica se a mensagem é de um ChatUser
+     */
+    public function isFromChatUser(ChatUser $chatUser): bool
+    {
+        return $this->sender_id === $chatUser->getId();
     }
 
     /**
@@ -119,5 +158,13 @@ class Message extends Model
     public function scopeByType($query, string $type)
     {
         return $query->where('message_type', $type);
+    }
+
+    /**
+     * Escopo para mensagens enviadas por um ChatUser
+     */
+    public function scopeBySender($query, ChatUser $chatUser)
+    {
+        return $query->where('sender_id', $chatUser->getId());
     }
 }

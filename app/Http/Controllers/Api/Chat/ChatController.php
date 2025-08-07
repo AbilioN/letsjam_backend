@@ -234,7 +234,9 @@ class ChatController extends Controller
             'other_user_type' => 'required|in:user,admin'
         ]);
         $user = $request->user();
+
         $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
+        // dd($user->id, $userType, $request->other_user_id, $request->other_user_type);
         $result = $useCase->execute($user->id, $userType, $request->other_user_id, $request->other_user_type);
         return response()->json(['success' => true, 'data' => $result], 201);
     }

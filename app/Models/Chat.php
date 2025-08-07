@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Entities\ChatUser;
+use App\Domain\Entities\ChatUserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -72,6 +74,23 @@ class Chat extends Model
     }
 
     /**
+     * Obtém o ChatUser que criou o chat
+     */
+    public function getCreatedByChatUser(): ?ChatUser
+    {
+        if (!$this->created_by) {
+            return null;
+        }
+
+        $userType = $this->created_by_type;
+        if (!$userType) {
+            return null;
+        }
+
+        return ChatUserFactory::createFromChatUserData($this->created_by, $userType);
+    }
+
+    /**
      * Verifica se é um chat privado
      */
     public function isPrivate(): bool
@@ -88,20 +107,20 @@ class Chat extends Model
     }
 
     /**
-     * Busca ou cria um chat privado entre dois usuários
+     * Busca ou cria um chat privado entre dois ChatUsers
      */
-    public static function findOrCreatePrivateChat(int $user1Id, int $user2Id): self
+    public static function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): self
     {
         // Busca um chat privado que contenha exatamente esses dois usuários
         $chat = self::where('type', 'private')
-            ->whereHas('users', function ($query) use ($user1Id) {
-                $query->where('user_id', $user1Id);
+            ->whereHas('users', function ($query) use ($user1) {
+                $query->where('user_id', $user1->getId());
             })
-            ->whereHas('users', function ($query) use ($user2Id) {
-                $query->where('user_id', $user2Id);
+            ->whereHas('users', function ($query) use ($user2) {
+                $query->where('user_id', $user2->getId());
             })
-            ->whereDoesntHave('users', function ($query) use ($user1Id, $user2Id) {
-                $query->whereNotIn('user_id', [$user1Id, $user2Id]);
+            ->whereDoesntHave('users', function ($query) use ($user1, $user2) {
+                $query->whereNotIn('user_id', [$user1->getId(), $user2->getId()]);
             })
             ->first();
 
@@ -109,13 +128,13 @@ class Chat extends Model
             // Cria um novo chat privado
             $chat = self::create([
                 'type' => 'private',
-                'created_by' => $user1Id,
+                'created_by' => $user1->getId(),
             ]);
 
             // Adiciona os participantes
-            $chat->users()->attach($user1Id, ['user_type' => 'user']);
-            $chat->users()->attach($user2Id, ['user_type' => 'user']);
-            $chat->name = $chat->users()->where('user_id', $user2Id)->first()->name;
+            $chat->addParticipant($user1);
+            $chat->addParticipant($user2);
+            $chat->name = $user2->getName();
             $chat->save();
             $chat->refresh();
         }
@@ -124,23 +143,62 @@ class Chat extends Model
     }
 
     /**
-     * Adiciona um usuário ao chat
+     * Adiciona um ChatUser ao chat
      */
-    public function addParticipant(int $userId, string $userType): void
+    public function addParticipant(ChatUser $chatUser): void
     {
-        $this->users()->attach($userId, ['user_type' => $userType]);
+        $this->users()->attach($chatUser->getId(), [
+            'user_type' => $chatUser->getType(),
+            'joined_at' => now(),
+            'is_active' => true
+        ]);
     }
 
     /**
-     * Remove um usuário do chat
+     * Remove um ChatUser do chat
      */
-    public function removeParticipant(int $userId): void
+    public function removeParticipant(ChatUser $chatUser): void
     {
-        $this->users()->detach($userId);
+        $this->users()->detach($chatUser->getId());
     }
 
     /**
-     * Marca mensagens como lidas para um usuário
+     * Verifica se um ChatUser é participante do chat
+     */
+    public function hasParticipant(ChatUser $chatUser): bool
+    {
+        return $this->users()->where('user_id', $chatUser->getId())->exists();
+    }
+
+    /**
+     * Verifica se um usuário é participante do chat (método de compatibilidade)
+     */
+    public function hasParticipantById(int $userId): bool
+    {
+        return $this->users()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Marca mensagens como lidas para um ChatUser
+     */
+    public function markAsReadForChatUser(ChatUser $chatUser): void
+    {
+        $this->users()->updateExistingPivot($chatUser->getId(), [
+            'last_read_at' => now()
+        ]);
+
+        // Marca mensagens não lidas como lidas
+        $this->messages()
+            ->where('sender_id', '!=', $chatUser->getId())
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+    }
+
+    /**
+     * Marca mensagens como lidas para um usuário (método de compatibilidade)
      */
     public function markAsReadForUser(int $userId): void
     {
@@ -159,11 +217,24 @@ class Chat extends Model
     }
 
     /**
-     * Verifica se um usuário é participante do chat
+     * Obtém participantes ativos como ChatUsers
      */
-    public function hasParticipant(int $userId): bool
+    public function getActiveChatUsers(): array
     {
-        return $this->users()->where('user_id', $userId)->exists();
+        $participants = \Illuminate\Support\Facades\DB::table('chat_user')
+            ->where('chat_id', $this->id)
+            ->where('is_active', true)
+            ->get();
+
+        $chatUsers = [];
+        foreach ($participants as $participant) {
+            $chatUsers[] = ChatUserFactory::createFromChatUserData(
+                $participant->user_id,
+                $participant->user_type
+            );
+        }
+
+        return $chatUsers;
     }
 
     /**
