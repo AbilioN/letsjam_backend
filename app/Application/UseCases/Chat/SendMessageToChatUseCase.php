@@ -2,6 +2,8 @@
 
 namespace App\Application\UseCases\Chat;
 
+use App\Domain\Entities\ChatUser;
+use App\Domain\Entities\Message;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Events\MessageSent;
 use App\Models\Message as MessageModel;
@@ -12,14 +14,15 @@ class SendMessageToChatUseCase
         private MessageRepositoryInterface $messageRepository
     ) {}
 
-    public function execute(int $chatId, string $content, string $senderType, int $senderId): array
+    public function execute(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
         // Cria a mensagem no chat específico
         $message = $this->messageRepository->create(
             $chatId,
             $content,
-            $senderType,
-            $senderId
+            $sender,
+            $messageType,
+            $metadata
         );
 
         // Buscar o modelo Eloquent para o evento
@@ -28,16 +31,6 @@ class SendMessageToChatUseCase
         // Disparar evento para broadcast
         MessageSent::dispatch($messageModel);
 
-        return [
-            'message' => [
-                'id' => $message->id,
-                'chat_id' => $message->chatId,
-                'content' => $message->content,
-                'sender_type' => $message->senderType,
-                'sender_id' => $message->senderId,
-                'is_read' => $message->isRead,
-                'created_at' => $message->createdAt?->format('Y-m-d H:i:s')
-            ]
-        ];
+        return $message;
     }
 } 

@@ -3,14 +3,15 @@
 namespace App\Infrastructure\Repositories;
 
 use App\Domain\Entities\Chat;
+use App\Domain\Entities\ChatUser;
 use App\Domain\Repositories\ChatRepositoryInterface;
 use App\Models\Chat as ChatModel;
 
 class ChatRepository implements ChatRepositoryInterface
 {
-    public function findOrCreatePrivateChat(int $user1Id, string $user1Type, int $user2Id, string $user2Type): Chat
+    public function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): Chat
     {
-        $chatModel = ChatModel::findOrCreatePrivateChat($user1Id, $user1Type, $user2Id, $user2Type);
+        $chatModel = ChatModel::findOrCreatePrivateChat($user1, $user2);
         
         return new Chat(
             id: $chatModel->id,
@@ -44,10 +45,10 @@ class ChatRepository implements ChatRepositoryInterface
         );
     }
 
-    public function getUserChats(int $userId, string $userType, int $page = 1, int $perPage = 20): array
+    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): array
     {
-        $paginator = ChatModel::whereHas('users', function ($query) use ($userId, $userType) {
-            $query->where('user_id', $userId)->where('user_type', $userType);
+        $paginator = ChatModel::whereHas('users', function ($query) use ($user) {
+            $query->where('user_id', $user->getId())->where('user_type', $user->getType());
         })
         ->with(['messages' => function ($query) {
             $query->latest()->limit(1);
@@ -56,10 +57,10 @@ class ChatRepository implements ChatRepositoryInterface
         ->paginate($perPage, ['*'], 'page', $page);
 
         $chats = $paginator->items();
-        $chatEntities = array_map(function ($chatModel) use ($userId, $userType) {
+        $chatEntities = array_map(function ($chatModel) use ($user) {
             $lastMessage = $chatModel->messages->first();
             $unreadCount = $chatModel->messages()
-                ->where('sender_id', '!=', $userId)
+                ->where('sender_id', '!=', $user->getId())
                 ->where('is_read', false)
                 ->count();
 
@@ -95,14 +96,13 @@ class ChatRepository implements ChatRepositoryInterface
         ];
     }
 
-    public function createGroupChat(string $name, string $description, int $createdBy, string $createdByType): Chat
+    public function createGroupChat(string $name, string $description, ChatUser $createdBy): Chat
     {
         $chatModel = ChatModel::create([
             'name' => $name,
             'type' => 'group',
             'description' => $description,
-            'created_by' => $createdBy,
-            'created_by_type' => $createdByType,
+            'created_by' => $createdBy->getId(),
         ]);
 
         return new Chat(
@@ -117,37 +117,37 @@ class ChatRepository implements ChatRepositoryInterface
         );
     }
 
-    public function addParticipantToChat(int $chatId, int $userId, string $userType): void
+    public function addParticipantToChat(int $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
-            $chatModel->addParticipant($userId, $userType);
+            $chatModel->addParticipant($user);
         }
     }
 
-    public function removeParticipantFromChat(int $chatId, int $userId, string $userType): void
+    public function removeParticipantFromChat(int $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
-            $chatModel->removeParticipant($userId, $userType);
+            $chatModel->removeParticipant($user);
         }
     }
 
-    public function markChatAsReadForUser(int $chatId, int $userId, string $userType): void
+    public function markChatAsReadForUser(int $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
-            $chatModel->markAsReadForUser($userId, $userType);
+            $chatModel->markAsReadForChatUser($user);
         }
     }
 
-    public function getUnreadCount(int $userId, string $userType): int
+    public function getUnreadCount(ChatUser $user): int
     {
-        return ChatModel::whereHas('users', function ($query) use ($userId, $userType) {
-            $query->where('user_id', $userId)->where('user_type', $userType);
+        return ChatModel::whereHas('users', function ($query) use ($user) {
+            $query->where('user_id', $user->getId())->where('user_type', $user->getType());
         })
-        ->whereHas('messages', function ($query) use ($userId) {
-            $query->where('sender_id', '!=', $userId)->where('is_read', false);
+        ->whereHas('messages', function ($query) use ($user) {
+            $query->where('sender_id', '!=', $user->getId())->where('is_read', false);
         })
         ->count();
     }

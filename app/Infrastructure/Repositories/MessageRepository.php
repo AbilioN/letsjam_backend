@@ -2,27 +2,31 @@
 
 namespace App\Infrastructure\Repositories;
 
+use App\Domain\Entities\ChatUser;
 use App\Domain\Entities\Message;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Models\Message as MessageModel;
 
 class MessageRepository implements MessageRepositoryInterface
 {
-    public function create(int $chatId, string $content, string $senderType, int $senderId): Message
+    public function create(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
         $messageModel = MessageModel::create([
             'chat_id' => $chatId,
             'content' => $content,
-            'sender_type' => $senderType,
-            'sender_id' => $senderId,
+            'sender_id' => $sender->getId(),
+            'message_type' => $messageType,
+            'metadata' => $metadata,
+            'is_read' => false,
         ]);
 
         return new Message(
             id: $messageModel->id,
             chatId: $messageModel->chat_id,
             content: $messageModel->content,
-            senderType: $messageModel->sender_type,
-            senderId: $messageModel->sender_id,
+            sender: $sender,
+            messageType: $messageModel->message_type,
+            metadata: $messageModel->metadata,
             isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
@@ -38,12 +42,19 @@ class MessageRepository implements MessageRepositoryInterface
             return null;
         }
 
+        // Cria ChatUser baseado no tipo
+        $sender = \App\Domain\Entities\ChatUserFactory::createFromChatUserData(
+            $messageModel->sender_id,
+            $messageModel->sender_type ?? 'user'
+        );
+
         return new Message(
             id: $messageModel->id,
             chatId: $messageModel->chat_id,
             content: $messageModel->content,
-            senderType: $messageModel->sender_type,
-            senderId: $messageModel->sender_id,
+            sender: $sender,
+            messageType: $messageModel->message_type,
+            metadata: $messageModel->metadata,
             isRead: (bool) $messageModel->is_read,
             readAt: $messageModel->read_at,
             createdAt: $messageModel->created_at,
@@ -96,10 +107,10 @@ class MessageRepository implements MessageRepositoryInterface
         ]);
     }
 
-    public function getUnreadCount(int $chatId, int $userId, string $userType): int
+    public function getUnreadCount(int $chatId, ChatUser $user): int
     {
         return MessageModel::where('chat_id', $chatId)
-            ->where('sender_id', '!=', $userId)
+            ->where('sender_id', '!=', $user->getId())
             ->where('is_read', false)
             ->count();
     }

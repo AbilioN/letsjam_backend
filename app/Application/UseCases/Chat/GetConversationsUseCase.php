@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\Chat;
 
+use App\Domain\Entities\ChatUser;
 use App\Domain\Repositories\ChatRepositoryInterface;
 
 class GetConversationsUseCase
@@ -10,8 +11,8 @@ class GetConversationsUseCase
         private ChatRepositoryInterface $chatRepository
     ) {}
 
-    public function execute(int $userId, string $userType, int $page = 1, int $perPage = 20): array
+    public function execute(ChatUser $user, int $page = 1, int $perPage = 20): array
     {
-        return $this->chatRepository->getUserChats($userId, $userType, $page, $perPage);
+        return $this->chatRepository->getUserChats($user, $page, $perPage);
     }
 } 

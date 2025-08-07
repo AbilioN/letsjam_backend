@@ -2,6 +2,8 @@
 
 namespace App\Application\UseCases\Chat;
 
+use App\Domain\Entities\Chat;
+use App\Domain\Entities\ChatUser;
 use App\Domain\Repositories\ChatRepositoryInterface;
 
 class CreateGroupChatUseCase
@@ -9,30 +11,34 @@ class CreateGroupChatUseCase
     public function __construct(private ChatRepositoryInterface $chatRepository) {}
 
     /**
-     * @param int $creatorId
-     * @param string $creatorType
+     * @param ChatUser $creator
      * @param string $name
      * @param string|null $description
-     * @param array $participants // [ [user_id, user_type], ... ]
-     * @return array
+     * @param array $participants // Array de ChatUser
+     * @return Chat
      */
-    public function execute(int $creatorId, string $creatorType, string $name, ?string $description, array $participants): array
+    public function execute(ChatUser $creator, string $name, ?string $description, array $participants): Chat
     {
         // Garante que o criador está na lista de participantes
-        $participants[] = ['user_id' => $creatorId, 'user_type' => $creatorType];
-        $chat = $this->chatRepository->createGroupChat($name, $description ?? '', $creatorId, $creatorType);
+        $allParticipants = array_merge($participants, [$creator]);
+        
+        $chatData = $this->chatRepository->createGroupChat($name, $description ?? '', $creator);
+        
         // Adiciona participantes
-        foreach ($participants as $p) {
-            $this->chatRepository->addParticipantToChat($chat->id, $p['user_id'], $p['user_type']);
+        foreach ($allParticipants as $participant) {
+            $this->chatRepository->addParticipantToChat($chatData['id'], $participant);
         }
-        return [
-            'chat' => [
-                'id' => $chat->id,
-                'type' => $chat->type,
-                'name' => $chat->name,
-                'description' => $chat->description,
-                'participants' => $participants,
-            ]
-        ];
+        
+        // Converte dados em entidade de domínio
+        return new Chat(
+            id: $chatData['id'],
+            name: $chatData['name'],
+            type: $chatData['type'],
+            description: $chatData['description'],
+            createdBy: $chatData['created_by'],
+            createdByType: $chatData['created_by_type'],
+            createdAt: $chatData['created_at'] ? new \DateTime($chatData['created_at']) : null,
+            updatedAt: $chatData['updated_at'] ? new \DateTime($chatData['updated_at']) : null
+        );
     }
 } 

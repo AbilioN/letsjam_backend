@@ -8,6 +8,9 @@ use App\Application\UseCases\Chat\GetConversationUseCase;
 use App\Application\UseCases\Chat\GetConversationsUseCase;
 use App\Application\UseCases\Chat\CreatePrivateChatUseCase;
 use App\Application\UseCases\Chat\CreateGroupChatUseCase;
+use App\Application\UseCases\Chat\SendMessageToChatUseCase;
+use App\Domain\Entities\ChatUser;
+use App\Domain\Entities\ChatUserFactory;
 use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Http\JsonResponse;
@@ -25,20 +28,23 @@ class ChatController extends Controller
         ]);
 
         $user = $request->user();
-        $senderType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
+        $sender = ChatUserFactory::createFromModel($user);
+
+        $receiver = ChatUserFactory::createFromChatUserData(
+            $request->receiver_id,
+            $request->receiver_type
+        );
 
         $result = $sendMessageUseCase->execute(
             $request->content,
-            $senderType,
-            $user->id,
-            $request->receiver_type,
-            $request->receiver_id
+            $sender,
+            $receiver
         );
 
         return response()->json($result, 201);
     }
 
-    public function sendMessageToChat(Request $request, $chatId): JsonResponse
+    public function sendMessageToChat(Request $request, $chatId, SendMessageToChatUseCase $useCase): JsonResponse
     {
         $request->validate([
             'content' => 'required|string|max:1000',
@@ -47,56 +53,37 @@ class ChatController extends Controller
         ]);
 
         $user = $request->user();
-        $userId = $user->id;
+        $chatUser = ChatUserFactory::createFromModel($user);
 
         // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
-        if (!$chat->hasParticipant($userId)) {
+        if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
-        // Cria a mensagem
-        $message = Message::create([
-            'chat_id' => $chatId,
-            'content' => $request->content,
-            'sender_id' => $userId,
-            'message_type' => $request->message_type,
-            'metadata' => $request->metadata,
-            'is_read' => false
-        ]);
-
-        // Obtém o tipo do remetente da tabela chat_user
-        $senderType = DB::table('chat_user')
-            ->where('chat_id', $chatId)
-            ->where('user_id', $userId)
-            ->value('user_type');
-
-        $messageData = [
-            'id' => $message->id,
-            'chat_id' => $message->chat_id,
-            'content' => $message->content,
-            'sender_id' => $message->sender_id,
-            'sender_type' => $senderType,
-            'message_type' => $message->message_type,
-            'metadata' => $message->metadata,
-            'is_read' => $message->is_read,
-            'created_at' => $message->created_at
-        ];
+        // Cria a mensagem usando o caso de uso
+        $message = $useCase->execute(
+            $chatId,
+            $request->content,
+            $chatUser,
+            $request->message_type,
+            $request->metadata
+        );
 
         return response()->json([
             'success' => true,
-            'data' => ['message' => $messageData]
+            'data' => ['message' => $message->toDto()->toArray()]
         ], 201);
     }
 
     public function getChatMessages(Request $request, $chatId): JsonResponse
     {
         $user = $request->user();
-        $userId = $user->id;
+        $chatUser = ChatUserFactory::createFromModel($user);
 
         // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
-        if (!$chat->hasParticipant($userId)) {
+        if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -141,49 +128,37 @@ class ChatController extends Controller
     public function markMessagesAsRead(Request $request, $chatId): JsonResponse
     {
         $user = $request->user();
-        $userId = $user->id;
+        $chatUser = ChatUserFactory::createFromModel($user);
 
         // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
-        if (!$chat->hasParticipant($userId)) {
+        if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
-        // Marca mensagens como lidas
-        $updatedCount = $chat->messages()
-            ->where('sender_id', '!=', $userId)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
-            ]);
-
-        // Atualiza last_read_at na tabela chat_user
-        DB::table('chat_user')
-            ->where('chat_id', $chatId)
-            ->where('user_id', $userId)
-            ->update(['last_read_at' => now()]);
+        // Marca mensagens como lidas usando a abstração ChatUser
+        $chat->markAsReadForChatUser($chatUser);
 
         return response()->json([
             'success' => true,
-            'data' => ['updated_count' => $updatedCount]
+            'data' => ['message' => 'Messages marked as read']
         ], 200);
     }
 
     public function getUnreadCount(Request $request, $chatId): JsonResponse
     {
         $user = $request->user();
-        $userId = $user->id;
+        $chatUser = ChatUserFactory::createFromModel($user);
 
         // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
-        if (!$chat->hasParticipant($userId)) {
+        if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
         // Conta mensagens não lidas
         $unreadCount = $chat->messages()
-            ->where('sender_id', '!=', $userId)
+            ->where('sender_id', '!=', $chatUser->getId())
             ->where('is_read', false)
             ->count();
 
@@ -203,13 +178,14 @@ class ChatController extends Controller
         ]);
 
         $user = $request->user();
-        $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
-
-        $result = $getConversationUseCase->execute(
-            $user->id,
-            $userType,
+        $chatUser = ChatUserFactory::createFromModel($user);
+        $otherChatUser = ChatUserFactory::createFromChatUserData(
             $request->other_user_id,
-            $request->other_user_type,
+            $request->other_user_type
+        );
+        $result = $getConversationUseCase->execute(
+            $chatUser,
+            $otherChatUser,
             $request->get('page', 1),
             $request->get('per_page', 50)
         );
@@ -220,9 +196,9 @@ class ChatController extends Controller
     public function getConversations(Request $request, GetConversationsUseCase $getConversationsUseCase): JsonResponse
     {
         $user = $request->user();
-        $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
+        $chatUser = ChatUserFactory::createFromModel($user);
 
-        $result = $getConversationsUseCase->execute($user->id, $userType);
+        $result = $getConversationsUseCase->execute($chatUser);
 
         return response()->json($result, 200);
     }
@@ -233,12 +209,22 @@ class ChatController extends Controller
             'other_user_id' => 'required|integer',
             'other_user_type' => 'required|in:user,admin'
         ]);
-        $user = $request->user();
 
-        $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
-        // dd($user->id, $userType, $request->other_user_id, $request->other_user_type);
-        $result = $useCase->execute($user->id, $userType, $request->other_user_id, $request->other_user_type);
-        return response()->json(['success' => true, 'data' => $result], 201);
+        $user = $request->user();
+        $chatUser = ChatUserFactory::createFromModel($user);
+
+        // Cria ChatUser para o outro usuário
+        $otherChatUser = ChatUserFactory::createFromChatUserData(
+            $request->other_user_id,
+            $request->other_user_type
+        );
+
+        $chat = $useCase->execute($chatUser, $otherChatUser);
+        
+        return response()->json([
+            'success' => true, 
+            'data' => $chat->toDto()->toArray()
+        ], 201);
     }
 
     public function createGroupChat(Request $request, CreateGroupChatUseCase $useCase): JsonResponse
@@ -250,15 +236,27 @@ class ChatController extends Controller
             'participants.*.user_id' => 'required|integer',
             'participants.*.user_type' => 'required|in:user,admin'
         ]);
+
         $user = $request->user();
-        $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
-        $result = $useCase->execute(
-            $user->id,
-            $userType,
+        $chatUser = ChatUserFactory::createFromModel($user);
+        // Converte participantes para ChatUsers
+        $participants = collect($request->participants)->map(function ($participant) {
+            return ChatUserFactory::createFromChatUserData(
+                $participant['user_id'],
+                $participant['user_type']
+            );
+        })->toArray();
+
+        $chat = $useCase->execute(
+            $chatUser,
             $request->name,
             $request->description,
-            $request->participants
+            $participants
         );
-        return response()->json(['success' => true, 'data' => $result], 201);
+
+        return response()->json([
+            'success' => true, 
+            'data' => $chat->toDto()->toArray()
+        ], 201);
     }
 }
