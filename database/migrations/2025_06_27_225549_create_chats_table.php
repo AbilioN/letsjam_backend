@@ -17,11 +17,10 @@ return new class extends Migration
             $table->enum('type', ['private', 'group'])->default('private');
             $table->text('description')->nullable(); // Para chats em grupo
             $table->unsignedBigInteger('created_by')->nullable(); // Quem criou o chat
-            $table->string('created_by_type')->nullable(); // 'user' ou 'admin'
             $table->timestamps();
             
             // Índices
-            $table->index(['type', 'created_by', 'created_by_type']);
+            $table->index(['type', 'created_by']);
             $table->index('created_at');
         });
     }

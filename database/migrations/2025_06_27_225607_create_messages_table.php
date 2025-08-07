@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('chat_id');
             $table->text('content');
-            $table->unsignedBigInteger('sender_id');
-            $table->enum('sender_type', ['user', 'admin']);
+            $table->unsignedBigInteger('sender_id'); // Apenas o ID, sem sender_type
+            $table->enum('message_type', ['text', 'image', 'file'])->default('text');
+            $table->json('metadata')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
@@ -26,7 +27,8 @@ return new class extends Migration
             
             // Índices para melhor performance
             $table->index(['chat_id', 'created_at']);
-            $table->index(['sender_type', 'sender_id']);
+            $table->index(['chat_id', 'is_read']);
+            $table->index(['sender_id', 'created_at']);
             $table->index('created_at');
         });
     }
