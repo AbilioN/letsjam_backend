@@ -152,4 +152,38 @@ class CreateChatTest extends TestCase
         // Verifica que apenas um chat foi criado no banco
         $this->assertDatabaseCount('chats', 1);
     }
+
+    public function test_created_by_type_is_derived_from_chat_user_table()
+    {
+        $token = $this->user1->createToken('test')->plainTextToken;
+        
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin'
+            ]);
+        
+        $response->assertStatus(201);
+        
+        $chatId = $response->json('data.chat.id');
+        
+        // Verifica que o chat foi criado sem created_by_type
+        $this->assertDatabaseHas('chats', [
+            'id' => $chatId,
+            'created_by' => $this->user1->id
+        ]);
+        
+        // Verifica que não há campo created_by_type
+        $chat = \Illuminate\Support\Facades\DB::table('chats')->where('id', $chatId)->first();
+        $this->assertObjectNotHasProperty('created_by_type', $chat);
+        
+        // Verifica que o tipo do criador está na tabela chat_user
+        $creatorParticipant = \Illuminate\Support\Facades\DB::table('chat_user')
+            ->where('chat_id', $chatId)
+            ->where('user_id', $this->user1->id)
+            ->first();
+            
+        $this->assertNotNull($creatorParticipant);
+        $this->assertEquals('user', $creatorParticipant->user_type);
+    }
 } 

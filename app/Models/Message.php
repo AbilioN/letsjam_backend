@@ -14,7 +14,8 @@ class Message extends Model
         'chat_id',
         'content',
         'sender_id',
-        'sender_type',
+        'message_type',
+        'metadata',
         'is_read',
         'read_at',
     ];
@@ -22,6 +23,7 @@ class Message extends Model
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -35,35 +37,43 @@ class Message extends Model
     }
 
     /**
-     * Relacionamento com o remetente (usuário)
+     * Relacionamento com o remetente (pode ser User ou Admin)
      */
     public function sender(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'sender_id')
-            ->where('sender_type', 'user');
+        // Primeiro tenta encontrar como User
+        $user = User::find($this->sender_id);
+        if ($user) {
+            return $this->belongsTo(User::class, 'sender_id');
+        }
+        
+        // Se não encontrar, tenta como Admin
+        return $this->belongsTo(Admin::class, 'sender_id');
     }
 
     /**
-     * Relacionamento com o remetente (admin)
+     * Obtém o tipo do remetente baseado na tabela chat_user
      */
-    public function senderAdmin(): BelongsTo
+    public function getSenderTypeAttribute(): ?string
     {
-        return $this->belongsTo(Admin::class, 'sender_id')
-            ->where('sender_type', 'admin');
+        return \Illuminate\Support\Facades\DB::table('chat_user')
+            ->where('chat_id', $this->chat_id)
+            ->where('user_id', $this->sender_id)
+            ->value('user_type');
     }
 
     /**
      * Escopo para buscar mensagens entre dois usuários
      */
-    public function scopeBetweenUsers($query, int $user1Id, string $user1Type, int $user2Id, string $user2Type)
+    public function scopeBetweenUsers($query, int $user1Id, int $user2Id)
     {
-        return $query->whereHas('chat', function ($q) use ($user1Id, $user1Type, $user2Id, $user2Type) {
+        return $query->whereHas('chat', function ($q) use ($user1Id, $user2Id) {
             $q->where('type', 'private')
-                ->whereHas('users', function ($subQ) use ($user1Id, $user1Type) {
-                    $subQ->where('user_id', $user1Id)->where('user_type', $user1Type);
+                ->whereHas('users', function ($subQ) use ($user1Id) {
+                    $subQ->where('user_id', $user1Id);
                 })
-                ->whereHas('users', function ($subQ) use ($user2Id, $user2Type) {
-                    $subQ->where('user_id', $user2Id)->where('user_type', $user2Type);
+                ->whereHas('users', function ($subQ) use ($user2Id) {
+                    $subQ->where('user_id', $user2Id);
                 });
         });
     }
@@ -93,5 +103,21 @@ class Message extends Model
             'is_read' => true,
             'read_at' => now()
         ]);
+    }
+
+    /**
+     * Escopo para mensagens não lidas
+     */
+    public function scopeUnread($query)
+    {
+        return $query->where('is_read', false);
+    }
+
+    /**
+     * Escopo para mensagens por tipo
+     */
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('message_type', $type);
     }
 }

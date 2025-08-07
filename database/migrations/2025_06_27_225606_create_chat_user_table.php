@@ -23,6 +23,7 @@ return new class extends Migration
             
             // Chaves estrangeiras
             $table->foreign('chat_id')->references('id')->on('chats')->onDelete('cascade');
+            
             // Índices otimizados
             $table->index(['chat_id', 'user_id']);
             $table->index(['user_id', 'user_type']);
@@ -30,8 +31,8 @@ return new class extends Migration
             $table->index(['user_id', 'is_active']);
             $table->index('last_read_at');
             
-            // Um usuário só pode estar uma vez por chat
-            $table->unique(['chat_id', 'user_id']);
+            // Um usuário só pode estar uma vez por chat com o mesmo tipo
+            $table->unique(['chat_id', 'user_id', 'user_type']);
         });
     }
 

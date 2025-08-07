@@ -16,7 +16,6 @@ class Chat extends Model
         'type',
         'description',
         'created_by',
-        'created_by_type',
     ];
 
     protected $casts = [
@@ -62,6 +61,17 @@ class Chat extends Model
     }
 
     /**
+     * Obtém o tipo do criador baseado na tabela chat_user
+     */
+    public function getCreatedByTypeAttribute(): ?string
+    {
+        return \Illuminate\Support\Facades\DB::table('chat_user')
+            ->where('chat_id', $this->id)
+            ->where('user_id', $this->created_by)
+            ->value('user_type');
+    }
+
+    /**
      * Verifica se é um chat privado
      */
     public function isPrivate(): bool
@@ -80,15 +90,15 @@ class Chat extends Model
     /**
      * Busca ou cria um chat privado entre dois usuários
      */
-    public static function findOrCreatePrivateChat(int $user1Id, string $user1Type, int $user2Id, string $user2Type): self
+    public static function findOrCreatePrivateChat(int $user1Id, int $user2Id): self
     {
         // Busca um chat privado que contenha exatamente esses dois usuários
         $chat = self::where('type', 'private')
-            ->whereHas('users', function ($query) use ($user1Id, $user1Type) {
-                $query->where('user_id', $user1Id)->where('user_type', $user1Type);
+            ->whereHas('users', function ($query) use ($user1Id) {
+                $query->where('user_id', $user1Id);
             })
-            ->whereHas('users', function ($query) use ($user2Id, $user2Type) {
-                $query->where('user_id', $user2Id)->where('user_type', $user2Type);
+            ->whereHas('users', function ($query) use ($user2Id) {
+                $query->where('user_id', $user2Id);
             })
             ->whereDoesntHave('users', function ($query) use ($user1Id, $user2Id) {
                 $query->whereNotIn('user_id', [$user1Id, $user2Id]);
@@ -100,12 +110,11 @@ class Chat extends Model
             $chat = self::create([
                 'type' => 'private',
                 'created_by' => $user1Id,
-                'created_by_type' => $user1Type,
             ]);
 
             // Adiciona os participantes
-            $chat->users()->attach($user1Id, ['user_type' => $user1Type]);
-            $chat->users()->attach($user2Id, ['user_type' => $user2Type]);
+            $chat->users()->attach($user1Id, ['user_type' => 'user']);
+            $chat->users()->attach($user2Id, ['user_type' => 'user']);
             $chat->name = $chat->users()->where('user_id', $user2Id)->first()->name;
             $chat->save();
             $chat->refresh();
@@ -125,7 +134,7 @@ class Chat extends Model
     /**
      * Remove um usuário do chat
      */
-    public function removeParticipant(int $userId, string $userType): void
+    public function removeParticipant(int $userId): void
     {
         $this->users()->detach($userId);
     }
@@ -133,11 +142,10 @@ class Chat extends Model
     /**
      * Marca mensagens como lidas para um usuário
      */
-    public function markAsReadForUser(int $userId, string $userType): void
+    public function markAsReadForUser(int $userId): void
     {
         $this->users()->updateExistingPivot($userId, [
-            'last_read_at' => now(),
-            'user_type' => $userType
+            'last_read_at' => now()
         ]);
 
         // Marca mensagens não lidas como lidas
@@ -148,5 +156,21 @@ class Chat extends Model
                 'is_read' => true,
                 'read_at' => now()
             ]);
+    }
+
+    /**
+     * Verifica se um usuário é participante do chat
+     */
+    public function hasParticipant(int $userId): bool
+    {
+        return $this->users()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * Obtém participantes ativos
+     */
+    public function activeParticipants()
+    {
+        return $this->users()->wherePivot('is_active', true);
     }
 }
