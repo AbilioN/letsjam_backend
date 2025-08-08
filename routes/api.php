@@ -44,7 +44,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/chat/{chatId}/read', [ChatController::class, 'markMessagesAsRead']);
     Route::get('/chat/{chatId}/unread-count', [ChatController::class, 'getUnreadCount']);
     Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
-    Route::get('/chat/conversations', [ChatController::class, 'getConversations']);
+    Route::get('/chats', [ChatController::class, 'getChats']);
 });
 
 // Admin Auth routes

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Chat;
 use App\Http\Controllers\Controller;
 use App\Application\UseCases\Chat\SendMessageUseCase;
 use App\Application\UseCases\Chat\GetConversationUseCase;
-use App\Application\UseCases\Chat\GetConversationsUseCase;
+use App\Application\UseCases\Chat\GetChatsUseCase;
 use App\Application\UseCases\Chat\CreatePrivateChatUseCase;
 use App\Application\UseCases\Chat\CreateGroupChatUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
@@ -191,13 +191,16 @@ class ChatController extends Controller
         return response()->json($result, 200);
     }
 
-    public function getConversations(Request $request, GetConversationsUseCase $getConversationsUseCase): JsonResponse
+    public function getChats(Request $request, GetChatsUseCase $getChatsUseCase): JsonResponse
     {
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-        $result = $getConversationsUseCase->execute($chatUser);
+        $chats = $getChatsUseCase->execute($chatUser);
 
-        return response()->json($result->toArray(), 200);
+        // Convert domain entity to DTO for API response
+        $dto = $chats->toDto();
+        
+        return response()->json($dto->toArray(), 200);
     }
 
     public function createPrivateChat(Request $request, CreatePrivateChatUseCase $useCase): JsonResponse

@@ -41,17 +41,20 @@ class ChatRepository implements ChatRepositoryInterface
      * @param ChatUser $user The user to get chats for
      * @param int $page Page number (default: 1)
      * @param int $perPage Items per page (default: 20)
-     * @return \App\Application\DTOs\ChatListResponseDto Returns a DTO containing:
-     *   - chats: array<\App\Application\DTOs\ChatListItemDto> List of chats
-     *   - pagination: \App\Application\DTOs\PaginationDto Pagination information
+     * @return \App\Domain\Entities\Chats Returns a domain entity containing:
+     *   - chats: array<\App\Domain\Entities\Chat> List of chat entities
+     *   - pagination information embedded in the entity
+     * 
+     * @throws \App\Domain\Exceptions\ChatNotFoundException When no chats are found
+     * @throws \App\Domain\Exceptions\InvalidPaginationException When pagination parameters are invalid
      * 
      * @example
-     * $response = $repository->getUserChats($user, 1, 20);
-     * $chats = $response->chats; // ChatListItemDto[]
-     * $pagination = $response->pagination; // PaginationDto
-     * $array = $response->toArray(); // array for JSON
+     * $chats = $repository->getUserChats($user, 1, 20);
+     * $chatsList = $chats->chats; // Chat[]
+     * $total = $chats->getTotal(); // int
+     * $dto = $chats->toDto(); // ChatListResponseDto for API
      */
-    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): \App\Application\DTOs\ChatListResponseDto
+    public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): \App\Domain\Entities\Chats
     {
         $paginator = ChatModel::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->getId())->where('user_type', $user->getType());
@@ -64,45 +67,26 @@ class ChatRepository implements ChatRepositoryInterface
 
         $chats = $paginator->items();
         $chatEntities = array_map(function ($chatModel) use ($user) {
-            $lastMessage = $chatModel->messages->first();
-            $unreadCount = $chatModel->messages()
-                ->where('sender_id', '!=', $user->getId())
-                ->where('is_read', false)
-                ->count();
-
-            $lastMessageDto = $lastMessage ? new \App\Application\DTOs\LastMessageDto(
-                id: $lastMessage->id,
-                content: $lastMessage->content,
-                senderType: $lastMessage->sender_type,
-                senderId: $lastMessage->sender_id,
-                createdAt: $lastMessage->created_at->format('Y-m-d H:i:s')
-            ) : null;
-
-            return new \App\Application\DTOs\ChatListItemDto(
+            return new \App\Domain\Entities\Chat(
                 id: $chatModel->id,
                 name: $chatModel->name ?? $chatModel->users->first()->name,
                 type: $chatModel->type,
                 description: $chatModel->description ?? '',
-                lastMessage: $lastMessageDto,
-                unreadCount: $unreadCount,
-                participantsCount: $chatModel->users->count(),
-                createdAt: $chatModel->created_at->format('Y-m-d H:i:s'),
-                updatedAt: $chatModel->updated_at->format('Y-m-d H:i:s')
+                createdBy: $chatModel->created_by,
+                createdByType: $chatModel->created_by_type,
+                createdAt: $chatModel->created_at,
+                updatedAt: $chatModel->updated_at
             );
         }, $chats);
 
-        $paginationDto = new \App\Application\DTOs\PaginationDto(
+        return new \App\Domain\Entities\Chats(
+            chats: $chatEntities,
             currentPage: $paginator->currentPage(),
             perPage: $paginator->perPage(),
             total: $paginator->total(),
             lastPage: $paginator->lastPage(),
             from: $paginator->firstItem(),
             to: $paginator->lastItem()
-        );
-
-        return new \App\Application\DTOs\ChatListResponseDto(
-            chats: $chatEntities,
-            pagination: $paginationDto
         );
     }
 

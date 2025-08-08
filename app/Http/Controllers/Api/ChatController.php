@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Application\UseCases\Chat\GetConversationUseCase;
-use App\Application\UseCases\Chat\GetConversationsUseCase;
+use App\Application\UseCases\Chat\GetChatsUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Application\UseCases\Chat\SendMessageUseCase;
+use App\Domain\Entities\ChatUserFactory;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +17,7 @@ class ChatController extends Controller
         private SendMessageUseCase $sendMessageUseCase,
         private SendMessageToChatUseCase $sendMessageToChatUseCase,
         private GetConversationUseCase $getConversationUseCase,
-        private GetConversationsUseCase $getConversationsUseCase
+        private GetChatsUseCase $getChatsUseCase
     ) {}
 
     /**
@@ -105,24 +106,22 @@ class ChatController extends Controller
     /**
      * Buscar conversas do usuário
      */
-    public function getConversations(Request $request): JsonResponse
+    public function getChats(Request $request): JsonResponse
     {
         $user = $request->user();
-        $userType = $user instanceof \App\Models\Admin ? 'admin' : 'user';
+        $chatUser = ChatUserFactory::createFromModel($user);
 
         $page = $request->get('page', 1);
         $perPage = $request->get('per_page', 20);
 
-        $result = $this->getConversationsUseCase->execute(
-            $user->id,
-            $userType,
-            $page,
-            $perPage
-        );
+        $chats = $this->getChatsUseCase->execute($chatUser, $page, $perPage);
+
+        // Convert domain entity to DTO for API response
+        $dto = $chats->toDto();
 
         return response()->json([
             'success' => true,
-            'data' => $result
+            'data' => $dto->toArray()
         ]);
     }
 } 
