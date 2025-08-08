@@ -7,7 +7,7 @@ use App\Domain\Entities\ChatUser;
 
 interface ChatRepositoryInterface
 {
-    public function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): Chat;
+    public function findOrCreatePrivateChat(ChatUser $sender, ChatUser $receiver): Chat;
     
     public function findById(int $id): ?Chat;
     

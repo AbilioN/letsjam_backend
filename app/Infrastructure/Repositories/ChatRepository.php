@@ -9,10 +9,10 @@ use App\Models\Chat as ChatModel;
 
 class ChatRepository implements ChatRepositoryInterface
 {
-    public function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): Chat
+    public function findOrCreatePrivateChat(ChatUser $sender, ChatUser $reciever): Chat
     {
-        $chatModel = ChatModel::findOrCreatePrivateChat($user1, $user2);
-        return $chatModel->toEntityFromUser($user2);
+        $chatModel = ChatModel::findOrCreatePrivateChat($sender, $reciever);
+        return $chatModel->toEntityFromReciever($reciever);
     }
 
     public function findById(int $id): ?Chat

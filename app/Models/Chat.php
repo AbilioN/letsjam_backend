@@ -40,7 +40,7 @@ class Chat extends Model
         );
     }
 
-    public function toEntityFromUser(ChatUser $user): ChatEntity
+    public function toEntityFromReciever(ChatUser $reciever): ChatEntity
     {
         return new ChatEntity(
             id: $this->id,
