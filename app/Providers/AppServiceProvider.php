@@ -38,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
         // Chat dependencies
         $this->app->bind(\App\Domain\Repositories\ChatRepositoryInterface::class, \App\Infrastructure\Repositories\ChatRepository::class);
         $this->app->bind(\App\Domain\Repositories\MessageRepositoryInterface::class, \App\Infrastructure\Repositories\MessageRepository::class);
+        
+        // Services
+        $this->app->singleton(\App\Services\PusherApiService::class);
     }
 
     /**
