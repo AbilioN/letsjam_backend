@@ -22,4 +22,6 @@ interface ChatRepositoryInterface
     public function markChatAsReadForUser(int $chatId, ChatUser $user): void;
     
     public function getUnreadCount(ChatUser $user): int;
+    
+    public function hasParticipant(int $chatId, ChatUser $user): bool;
 } 

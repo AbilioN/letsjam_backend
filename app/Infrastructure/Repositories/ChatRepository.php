@@ -145,4 +145,14 @@ class ChatRepository implements ChatRepositoryInterface
         })
         ->count();
     }
+
+    public function hasParticipant(int $chatId, ChatUser $user): bool
+    {
+        $chatModel = ChatModel::find($chatId);
+        if (!$chatModel) {
+            return false;
+        }
+
+        return $chatModel->hasParticipant($user);
+    }
 } 

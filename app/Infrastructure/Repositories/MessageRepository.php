@@ -64,7 +64,7 @@ class MessageRepository implements MessageRepositoryInterface
 
     public function getChatMessages(int $chatId, int $page = 1, int $perPage = 50): array
     {
-        $paginator = MessageModel::with(['sender', 'senderAdmin'])
+        $paginator = MessageModel::with(['sender'])
             ->where('chat_id', $chatId)
             ->orderBy('created_at', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);

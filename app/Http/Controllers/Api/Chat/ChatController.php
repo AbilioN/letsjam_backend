@@ -9,6 +9,7 @@ use App\Application\UseCases\Chat\GetChatsUseCase;
 use App\Application\UseCases\Chat\CreatePrivateChatUseCase;
 use App\Application\UseCases\Chat\CreateGroupChatUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
+use App\Application\UseCases\Chat\GetChatMessagesUseCase;
 use App\Domain\Entities\ChatUserFactory;
 use App\Models\Chat;
 use Illuminate\Http\JsonResponse;
@@ -74,53 +75,25 @@ class ChatController extends Controller
         ], 201);
     }
 
-    public function getChatMessages(Request $request, $chatId): JsonResponse
+    public function getChatMessages(Request $request, $chatId, GetChatMessagesUseCase $useCase): JsonResponse
     {
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100'
+        ]);
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-
-        // Verifica se o usuário é participante do chat
-        $chat = Chat::findOrFail($chatId);
-        if (!$chat->hasParticipant($chatUser)) {
-            return response()->json(['error' => 'Access denied'], 403);
+        try {
+            $page = $request->get('page', 1);
+            $perPage = $request->get('per_page', 50);
+            $result = $useCase->execute($chatUser, $chatId, $page, $perPage);
+            return response()->json($result->toArray(), 200);
+        } catch (\Exception $e) {
+            if ($e->getCode() === 403) {
+                return response()->json(['error' => 'Access denied'], 403);
+            }
+            return response()->json(['error' => 'Internal server error'], 500);
         }
-
-        $messages = $chat->messages()
-            ->with('sender')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Enriquece as mensagens com sender_type
-        $enrichedMessages = $messages->map(function ($message) use ($chatId) {
-            $senderType = DB::table('chat_user')
-                ->where('chat_id', $chatId)
-                ->where('user_id', $message->sender_id)
-                ->value('user_type');
-
-            return [
-                'id' => $message->id,
-                'chat_id' => $message->chat_id,
-                'content' => $message->content,
-                'sender_id' => $message->sender_id,
-                'message_type' => $message->message_type,
-                'metadata' => $message->metadata,
-                'is_read' => $message->is_read,
-                'created_at' => $message->created_at
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'messages' => $enrichedMessages,
-                'from_cache' => false,
-                'pagination' => [
-                    'current_page' => 1,
-                    'per_page' => $messages->count(),
-                    'total' => $messages->count()
-                ]
-            ]
-        ], 200);
     }
 
     public function markMessagesAsRead(Request $request, $chatId): JsonResponse
