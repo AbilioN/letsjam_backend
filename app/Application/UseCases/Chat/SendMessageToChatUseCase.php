@@ -7,6 +7,7 @@ use App\Domain\Entities\Message;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Events\MessageSent;
 use App\Models\Message as MessageModel;
+use Illuminate\Support\Facades\Log;
 
 class SendMessageToChatUseCase
 {
@@ -29,6 +30,7 @@ class SendMessageToChatUseCase
         $messageModel = MessageModel::find($message->id);
         
         // Disparar evento para broadcast
+        Log::info('Dispatching MessageSent event for message ID: ' . $message->id);
         MessageSent::dispatch($messageModel);
 
         return $message;
