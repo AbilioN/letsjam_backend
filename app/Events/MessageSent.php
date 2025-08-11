@@ -41,7 +41,7 @@ class MessageSent implements ShouldBroadcast
             $pusherService = app(PusherApiService::class);
             Log::info('PusherApiService instanciado com sucesso');
             
-            $channel = 'private-chat.' . $this->message->chat_id;
+            $channel = 'chat.' . $this->message->chat_id;
             
             $data = [
                 'id' => $this->message->id,

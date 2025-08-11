@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Api\Chat\ChatController;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/{chatId}/unread-count', [ChatController::class, 'getUnreadCount']);
     Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
     Route::get('/chats', [ChatController::class, 'getChats']);
+
+    Route::post('/broadcasting/auth', [ChatController::class, 'broadcastAuth']);
 });
 
 // Admin Auth routes

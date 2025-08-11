@@ -14,10 +14,17 @@ use App\Domain\Entities\ChatUserFactory;
 use App\Models\Chat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
+
+    public function broadcastAuth(Request $request)
+    {
+        return Broadcast::auth($request);
+    }
+
     public function sendMessage(Request $request, SendMessageUseCase $sendMessageUseCase): JsonResponse
     {
         $request->validate([
@@ -77,16 +84,12 @@ class ChatController extends Controller
 
     public function getChatMessages(Request $request, $chatId, GetChatMessagesUseCase $useCase): JsonResponse
     {
-        $request->validate([
-            'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:1|max:100'
-        ]);
+        // Validação removida - sempre retorna as 30 mensagens mais recentes
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
         try {
-            $page = $request->get('page', 1);
-            $perPage = $request->get('per_page', 50);
-            $result = $useCase->execute($chatUser, $chatId, $page, $perPage);
+            // Sempre pegar as 30 mensagens mais recentes
+            $result = $useCase->execute($chatUser, $chatId, 1, 30);
             return response()->json($result->toArray(), 200);
         } catch (\Exception $e) {
             if ($e->getCode() === 403) {
