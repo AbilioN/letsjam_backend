@@ -44,11 +44,11 @@ class Chat extends Model
     {
         return new ChatEntity(
             id: $this->id,
-            name: $user->getName(),
+            name: $reciever->getName(),
             type: $this->type,
             description: $this->description,
-            createdBy: $user->getId(),
-            createdByType: $user->getType(),
+            createdBy: $reciever->getId(),
+            createdByType: $reciever->getType(),
             createdAt: $this->created_at,
             updatedAt: $this->updated_at
         );

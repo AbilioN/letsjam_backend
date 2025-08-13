@@ -74,5 +74,7 @@ class ChatUserFactory
                     "Tipo '{$userType}' não suportado. Use 'user' ou 'admin'."
                 );
         }
+
+
     }
 } 

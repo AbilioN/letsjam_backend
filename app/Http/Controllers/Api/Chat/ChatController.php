@@ -189,15 +189,16 @@ class ChatController extends Controller
             ]);
     
             $user = $request->user();
+
             $chatUser = ChatUserFactory::createFromModel($user);
-    
+            // dd($chatUser);
             // Cria ChatUser para o outro usuário
             $otherChatUser = ChatUserFactory::createFromChatUserData(
                 $request->other_user_id,
                 $request->other_user_type
             );
 
-    
+            // dd($chatUser, $otherChatUser);
             $chat = $useCase->execute($chatUser, $otherChatUser);
             DB::commit();   
             return response()->json([
@@ -205,6 +206,8 @@ class ChatController extends Controller
                 'data' => $chat->toDto()->toArray()
             ], 201);
         } catch (\Exception $e) {
+
+            dd( $e->getLine(), $e->getFile());
             DB::rollBack();
             return response()->json([
                 'success' => false,
