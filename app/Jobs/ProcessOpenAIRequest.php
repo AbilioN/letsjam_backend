@@ -61,14 +61,21 @@ class ProcessOpenAIRequest implements ShouldQueue
             // Send request to Redis queue for Python worker
             Redis::lpush($this->queueName, json_encode($requestData));
             
+            // Store request data for later retrieval when processing response
+            Redis::setex("openai_request:{$requestId}", 3600, json_encode([
+                'chat_id' => $this->chatId,
+                'user_id' => $this->userId,
+                'message' => $this->userMessage,
+                'timestamp' => now()->toISOString()
+            ]));
+            
             Log::info('Request sent to Redis queue', [
                 'request_id' => $requestId,
                 'queue' => $this->queueName
             ]);
 
-            // Don't wait for response - it will be processed asynchronously
             // The Python worker will send the response back to Redis
-            // and we can create a separate job to handle the response
+            // and our listener will pick it up and process it
 
         } catch (Exception $e) {
             Log::error('Failed to process OpenAI request', [
