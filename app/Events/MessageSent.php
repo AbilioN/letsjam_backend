@@ -37,6 +37,14 @@ class MessageSent implements ShouldBroadcast
     }
 
     /**
+     * The event's broadcast name.
+     */
+    public function broadcastAs(): string
+    {
+        return 'MessageSent';
+    }
+
+    /**
      * Determine if this event should broadcast.
      */
     public function broadcastWhen(): bool
