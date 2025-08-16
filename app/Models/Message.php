@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Domain\Entities\ChatUser;
 use App\Domain\Entities\ChatUserFactory;
+use App\Domain\Entities\Message as MessageEntity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,21 @@ class Message extends Model
         return $this->belongsTo(Chat::class);
     }
 
+    public function toEntity(): MessageEntity
+    {
+        return new MessageEntity(
+            id: $this->id,
+            chatId: $this->chat_id,
+            content: $this->content,
+            sender: $this->getSenderChatUser(),
+            messageType: $this->message_type,
+            metadata: $this->metadata,
+            isRead: $this->is_read,
+            readAt: $this->read_at,
+            createdAt: $this->created_at,
+            updatedAt: $this->updated_at
+        );
+    }
     /**
      * Relacionamento com o remetente (pode ser User ou Admin)
      */

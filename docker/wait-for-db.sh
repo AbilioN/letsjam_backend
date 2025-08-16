@@ -1,27 +1,33 @@
 #!/bin/bash
 
 # Script para aguardar o banco de dados estar pronto
-echo "🔄 Waiting for database to be ready..."
+echo "Aguardando banco de dados estar disponível..."
 
-# Aguarda até 60 segundos para o banco estar pronto
+# Aguarda até 60 segundos
 for i in {1..60}; do
-    if mysqladmin ping -h db -u lestjam -ppassword --silent; then
-        echo "✅ Database is ready!"
+    # Usa PHP para verificar a conexão com o banco
+    if php -r "
+        try {
+            \$pdo = new PDO('mysql:host=db;dbname=${DB_DATABASE:-lestjam}', '${DB_USERNAME:-lestjam}', '${DB_PASSWORD:-password}');
+            \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            echo 'Database connection successful';
+            exit(0);
+        } catch (Exception \$e) {
+            exit(1);
+        }
+    " > /dev/null 2>&1; then
+        echo "Banco de dados está pronto!"
         break
     fi
     
     if [ $i -eq 60 ]; then
-        echo "❌ Database connection timeout after 60 seconds"
+        echo "Timeout: Banco de dados não ficou disponível em 60 segundos"
         exit 1
     fi
     
-    echo "⏳ Waiting for database... ($i/60)"
+    echo "Tentativa $i/60: Aguardando banco..."
     sleep 1
 done
 
-# Aguarda mais 5 segundos para garantir que está estável
-echo "⏳ Additional 5 seconds wait for database stability..."
-sleep 5
-
-echo "🚀 Starting queue worker..."
-exec php artisan queue:work --queue=message_processing,default --sleep=3 --tries=3 --max-time=3600
+# Executa o comando passado como argumento
+exec "$@"

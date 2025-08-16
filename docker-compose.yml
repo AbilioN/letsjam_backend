@@ -79,7 +79,11 @@ services:
     depends_on:
       - db
       - redis
-    command: php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-lestjam}
+      - DB_USERNAME=${DB_USERNAME:-lestjam}
+    command: ./docker/wait-for-db.sh php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
 
   # Queue Worker para eventos (MessageSent, BroadcastEvent)
   queue_events:
@@ -96,7 +100,11 @@ services:
     depends_on:
       - db
       - redis
-    command: php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-lestjam}
+      - DB_USERNAME=${DB_USERNAME:-lestjam}
+    command: ./docker/wait-for-db.sh php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
 
 networks:
   lestjam_network:

@@ -8,7 +8,6 @@ use App\Domain\Entities\Message;
 use App\Domain\Repositories\ChatRepositoryInterface;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Events\MessageSent;
-use App\Models\Message as MessageModel;
 
 class SendMessageUseCase
 {
@@ -29,11 +28,8 @@ class SendMessageUseCase
             $sender
         );
 
-        // Buscar o modelo Eloquent para o evento
-        $messageModel = MessageModel::find($message->id);
-        
-        // Disparar evento para broadcast
-        MessageSent::dispatch($messageModel);
+        // Disparar evento para broadcast usando a entidade do Domain
+        MessageSent::dispatch($message);
 
         // Converte dados em entidade de domínio
         $chat = new Chat(

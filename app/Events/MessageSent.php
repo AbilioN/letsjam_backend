@@ -2,12 +2,9 @@
 
 namespace App\Events;
 
-use App\Models\Message;
-use App\Services\PusherApiService;
+use App\Domain\Entities\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -34,39 +31,18 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        Log::info('MessageSent event broadcasting on channel: chat.' . $this->message->chat_id);
-        
-        try {
-            // Usar API REST do Pusher diretamente
-            $pusherService = app(PusherApiService::class);
-            Log::info('PusherApiService instanciado com sucesso');
-            
-            $channel = 'chat.' . $this->message->chat_id;
-            
-            $data = [
-                'id' => $this->message->id,
-                'chat_id' => $this->message->chat_id,
-                'content' => $this->message->content,
-                'sender_type' => $this->message->sender_type,
-                'sender_id' => $this->message->sender_id,
-                'is_read' => $this->message->is_read,
-                'created_at' => $this->message->created_at->format('Y-m-d H:i:s')
-            ];
-            
-            Log::info('Tentando enviar evento para Pusher', ['channel' => $channel, 'data' => $data]);
-            $result = $pusherService->trigger($channel, 'MessageSent', $data);
-            Log::info('Resultado do envio: ' . ($result ? 'sucesso' : 'falha'));
-            
-        } catch (\Exception $e) {
-            Log::error('Erro ao usar PusherApiService: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-        
-        // Retornar canal vazio para não usar broadcasting padrão
-        return new PrivateChannel('chat.' . $this->message->chat_id);
+        $channelName = 'chat.' . $this->message->chatId;
+        Log::info('MessageSent event broadcasting on channel: ' . $channelName);
+        return new Channel($channelName);
+    }
+
+    /**
+     * Determine if this event should broadcast.
+     */
+    public function broadcastWhen(): bool
+    {
+        // Sempre broadcast
+        return true;
     }
 
     /**
@@ -76,12 +52,12 @@ class MessageSent implements ShouldBroadcast
     {
         return [
             'id' => $this->message->id,
-            'chat_id' => $this->message->chat_id,
+            'chat_id' => $this->message->chatId,
             'content' => $this->message->content,
-            'sender_type' => $this->message->sender_type,
-            'sender_id' => $this->message->sender_id,
-            'is_read' => $this->message->is_read,
-            'created_at' => $this->message->created_at->format('Y-m-d H:i:s')
+            'sender_type' => $this->message->sender->getType(),
+            'sender_id' => $this->message->sender->getId(),
+            'is_read' => $this->message->isRead,
+            'created_at' => $this->message->createdAt?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s')
         ];
     }
 }

@@ -11,9 +11,7 @@ class ChatRepository implements ChatRepositoryInterface
 {
     public function findOrCreatePrivateChat(ChatUser $sender, ChatUser $reciever): Chat
     {
-
         $chatModel = ChatModel::findOrCreatePrivateChat($sender, $reciever);
-        // dd($chatModel);
         return $chatModel->toEntityFromReciever($reciever);
     }
 
