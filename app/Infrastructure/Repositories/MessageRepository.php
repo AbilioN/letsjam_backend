@@ -19,19 +19,7 @@ class MessageRepository implements MessageRepositoryInterface
             'metadata' => $metadata,
             'is_read' => false,
         ]);
-
-        return new Message(
-            id: $messageModel->id,
-            chatId: $messageModel->chat_id,
-            content: $messageModel->content,
-            sender: $sender,
-            messageType: $messageModel->message_type,
-            metadata: $messageModel->metadata,
-            isRead: (bool) $messageModel->is_read,
-            readAt: $messageModel->read_at,
-            createdAt: $messageModel->created_at,
-            updatedAt: $messageModel->updated_at
-        );
+        return $messageModel->toEntity();
     }
 
     public function findById(int $id): ?Message

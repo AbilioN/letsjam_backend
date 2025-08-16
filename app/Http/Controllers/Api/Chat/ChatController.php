@@ -51,32 +51,19 @@ class ChatController extends Controller
         return response()->json($result, 201);
     }
 
-    public function sendMessageToChat(Request $request, $chatId, SendMessageToChatUseCase $useCase): JsonResponse
+    public function sendMessageToChat(Request $request, $chatId): JsonResponse
     {
         $request->validate([
             'content' => 'required|string|max:1000',
             'message_type' => 'required|in:text,image,file',
             'metadata' => 'nullable|array'
         ]);
-
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-
-        // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
         if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
-        // $message = $useCase->execute(
-        //     $chatId,
-        //     $request->content,
-        //     $chatUser,
-        //     $request->message_type,
-        //     $request->metadata
-        // );
-
-        
-        // Dispara o job para processar a mensagem em fila
         ProcessMessageJob::dispatch(
             $chatId,
             $chatUser->getId(),
