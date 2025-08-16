@@ -11,6 +11,7 @@ use App\Application\UseCases\Chat\CreateGroupChatUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Application\UseCases\Chat\GetChatMessagesUseCase;
 use App\Domain\Entities\ChatUserFactory;
+use App\Jobs\ProcessMessageJob;
 use App\Models\Chat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,20 +67,32 @@ class ChatController extends Controller
         if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
+        // $message = $useCase->execute(
+        //     $chatId,
+        //     $request->content,
+        //     $chatUser,
+        //     $request->message_type,
+        //     $request->metadata
+        // );
 
-        // Cria a mensagem usando o caso de uso
-        $message = $useCase->execute(
+        
+        // Dispara o job para processar a mensagem em fila
+        ProcessMessageJob::dispatch(
             $chatId,
+            $chatUser->getId(),
             $request->content,
-            $chatUser,
             $request->message_type,
             $request->metadata
         );
-
         return response()->json([
             'success' => true,
-            'data' => ['message' => $message->toDto()->toArray()]
-        ], 201);
+            'message' => 'Message queued for processing',
+            'data' => [
+                'chat_id' => $chatId,
+                'status' => 'queued',
+                'message_type' => $request->message_type
+            ]
+        ], 202);
     }
 
     public function getChatMessages(Request $request, $chatId, GetChatMessagesUseCase $useCase): JsonResponse
