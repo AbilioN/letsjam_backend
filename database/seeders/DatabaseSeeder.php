@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             // ChatSeeder::class,
             TestUserSeeder::class,
+            AssistantSeeder::class,
         ]);
     }
 }

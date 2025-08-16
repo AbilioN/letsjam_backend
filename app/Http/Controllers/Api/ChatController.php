@@ -28,7 +28,7 @@ class ChatController extends Controller
         $request->validate([
             'content' => 'required|string|max:1000',
             'other_user_id' => 'required|integer',
-            'other_user_type' => 'required|in:user,admin'
+            'other_user_type' => 'required|in:user,admin,assistant'
         ]);
 
         $user = $request->user();

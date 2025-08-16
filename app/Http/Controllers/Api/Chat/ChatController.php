@@ -198,7 +198,7 @@ class ChatController extends Controller
             DB::beginTransaction();
             $request->validate([
                 'other_user_id' => 'required|integer',
-                'other_user_type' => 'required|in:user,admin'
+                'other_user_type' => 'required|in:user,admin,assistant'
             ]);
     
             $user = $request->user();
@@ -211,7 +211,7 @@ class ChatController extends Controller
                 $request->other_user_type
             );
 
-            // dd($chatUser, $otherChatUser);
+
             $chat = $useCase->execute($chatUser, $otherChatUser);
             DB::commit();   
             return response()->json([
@@ -220,6 +220,7 @@ class ChatController extends Controller
             ], 201);
         } catch (\Exception $e) {
 
+            dd($e->getMessage());
             dd( $e->getLine(), $e->getFile());
             DB::rollBack();
             return response()->json([

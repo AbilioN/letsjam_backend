@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('chat_id');
             $table->unsignedBigInteger('user_id');
-            $table->enum('user_type', ['user', 'admin']);
+            $table->enum('user_type', ['user', 'admin', 'assistant']);
             $table->timestamp('joined_at')->useCurrent();
             $table->timestamp('last_read_at')->nullable();
             $table->boolean('is_active')->default(true);
