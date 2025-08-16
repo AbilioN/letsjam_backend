@@ -43,7 +43,7 @@ class Admin implements ChatUser
         return $this->name;
     }
 
-    public function getEmail(): string
+    public function getEmail(): ?string
     {
         return $this->email;
     }

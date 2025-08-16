@@ -15,9 +15,9 @@ interface ChatUser
     public function getName(): string;
 
     /**
-     * Obtém o email do usuário
+     * Obtém o email do usuário (pode ser null para assistentes)
      */
-    public function getEmail(): string;
+    public function getEmail(): ?string;
 
     /**
      * Obtém o tipo do usuário (user ou admin)

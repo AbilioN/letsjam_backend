@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Domain\Entities\ChatUserFactory;
+use App\Models\Assistant;
 use App\Models\Chat;
 use Exception;
 
@@ -55,9 +56,11 @@ class ProcessMessageJob implements ShouldQueue
             }
 
             // Cria o ChatUser a partir do ID do usuário
+            // Determina o tipo baseado no ID (assumindo que assistentes têm IDs específicos)
+            $userType = $this->determineUserType($this->userId);
             $chatUser = ChatUserFactory::createFromChatUserData(
                 $this->userId,
-                'user' // Assumindo que é sempre um usuário normal
+                $userType
             );
 
             // Verifica se o usuário ainda é participante do chat
@@ -138,6 +141,25 @@ class ProcessMessageJob implements ShouldQueue
 
         // Cria mensagem de erro final
         $this->createErrorMessage();
+    }
+
+    /**
+     * Determine the user type based on the user ID
+     */
+    private function determineUserType(int $userId): string
+    {
+        // Verifica se é um assistente
+        if (Assistant::find($userId)) {
+            return 'assistant';
+        }
+        
+        // Verifica se é um admin
+        if (\App\Models\Admin::find($userId)) {
+            return 'admin';
+        }
+        
+        // Por padrão, assume que é um usuário normal
+        return 'user';
     }
 
     /**

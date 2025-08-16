@@ -4,6 +4,7 @@ namespace App\Domain\Entities;
 
 use App\Models\Admin as AdminModel;
 use App\Models\User as UserModel;
+use App\Models\Assistant as AssistantModel;
 
 class ChatUserFactory
 {
@@ -37,10 +38,25 @@ class ChatUserFactory
     }
 
     /**
+     * Cria uma entidade de domínio Assistant a partir do modelo Eloquent
+     */
+    public static function createAssistantFromModel(AssistantModel $model): Assistant
+    {
+        return new Assistant(
+            id: $model->id,
+            name: $model->name,
+            description: $model->description,
+            avatar: $model->avatar,
+            capabilities: $model->capabilities,
+            isActive: $model->is_active
+        );
+    }
+
+    /**
      * Cria uma entidade de domínio a partir do modelo Eloquent
      * Retorna a entidade apropriada baseada no tipo do modelo
      */
-    public static function createFromModel(UserModel|AdminModel $model): ChatUser
+    public static function createFromModel(UserModel|AdminModel|AssistantModel $model): ChatUser
     {
         if ($model instanceof UserModel) {
             return self::createUserFromModel($model);
@@ -50,8 +66,12 @@ class ChatUserFactory
             return self::createAdminFromModel($model);
         }
 
+        if ($model instanceof AssistantModel) {
+            return self::createAssistantFromModel($model);
+        }
+
         throw new \InvalidArgumentException(
-            'Modelo não suportado. Apenas User e Admin são suportados.'
+            'Modelo não suportado. Apenas User, Admin e Assistant são suportados.'
         );
     }
 
@@ -69,12 +89,14 @@ class ChatUserFactory
                 $model = AdminModel::findOrFail($userId);
                 return self::createAdminFromModel($model);
 
+            case 'assistant':
+                $model = AssistantModel::findOrFail($userId);
+                return self::createAssistantFromModel($model);
+
             default:
                 throw new \InvalidArgumentException(
-                    "Tipo '{$userType}' não suportado. Use 'user' ou 'admin'."
+                    "Tipo '{$userType}' não suportado. Use 'user', 'admin' ou 'assistant'."
                 );
         }
-
-
     }
 } 
