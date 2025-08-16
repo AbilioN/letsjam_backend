@@ -211,7 +211,6 @@ class ChatController extends Controller
                 $request->other_user_type
             );
 
-
             $chat = $useCase->execute($chatUser, $otherChatUser);
             DB::commit();   
             return response()->json([

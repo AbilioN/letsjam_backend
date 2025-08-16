@@ -64,12 +64,12 @@ services:
     networks:
       - lestjam_network
 
-  # Queue Worker (opcional)
-  queue:
+  # Queue Worker para mensagens (ProcessMessageJob)
+  queue_messages:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lestjam_queue
+    container_name: lestjam_queue_messages
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -79,7 +79,24 @@ services:
     depends_on:
       - db
       - redis
-    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
+
+  # Queue Worker para eventos (MessageSent, BroadcastEvent)
+  queue_events:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lestjam_queue_events
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - lestjam_network
+    depends_on:
+      - db
+      - redis
+    command: php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
 
 networks:
   lestjam_network:

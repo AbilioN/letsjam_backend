@@ -11,28 +11,19 @@ class ChatRepository implements ChatRepositoryInterface
 {
     public function findOrCreatePrivateChat(ChatUser $sender, ChatUser $reciever): Chat
     {
+
         $chatModel = ChatModel::findOrCreatePrivateChat($sender, $reciever);
+        // dd($chatModel);
         return $chatModel->toEntityFromReciever($reciever);
     }
 
     public function findById(int $id): ?Chat
     {
         $chatModel = ChatModel::find($id);
-        
         if (!$chatModel) {
             return null;
         }
-
-        return new Chat(
-            id: $chatModel->id,
-            name: $chatModel->name,
-            type: $chatModel->type,
-            description: $chatModel->description,
-            createdBy: $chatModel->created_by,
-            createdByType: $chatModel->created_by_type,
-            createdAt: $chatModel->created_at,
-            updatedAt: $chatModel->updated_at
-        );
+        return $chatModel->toEntity();
     }
 
     /**
@@ -67,6 +58,7 @@ class ChatRepository implements ChatRepositoryInterface
 
         $chats = $paginator->items();
         $chatEntities = array_map(function ($chatModel) use ($user) {
+            // return $chatModel->toEntityFromReciever($user);
             return new \App\Domain\Entities\Chat(
                 id: $chatModel->id,
                 name: $chatModel->name ?? $chatModel->users->first()->name,

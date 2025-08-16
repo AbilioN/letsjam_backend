@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
+use App\Helpers\JobLogger;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Domain\Entities\ChatUserFactory;
 use App\Models\Assistant;
@@ -41,34 +41,51 @@ class ProcessMessageJob implements ShouldQueue
      */
     public function handle(SendMessageToChatUseCase $useCase): void
     {
+        $logger = new JobLogger('ProcessMessageJob', [
+            'chat_id' => $this->chatId,
+            'user_id' => $this->userId,
+            'message_type' => $this->messageType,
+            'queue' => $this->queueName,
+            'attempt' => $this->attempts(),
+            'max_attempts' => $this->tries
+        ]);
+
+        $logger->jobStarted();
+
         try {
-            Log::info('Processing message job started', [
-                'chat_id' => $this->chatId,
-                'user_id' => $this->userId,
-                'message_type' => $this->messageType,
-                'queue' => $this->queueName
-            ]);
 
             // Verifica se o chat ainda existe
+            $logger->checkingChat($this->chatId);
             $chat = Chat::find($this->chatId);
             if (!$chat) {
+                $logger->chatNotFound($this->chatId);
                 throw new Exception('Chat not found');
             }
+            $logger->chatFound($this->chatId, $chat->name ?? null);
 
             // Cria o ChatUser a partir do ID do usuário
             // Determina o tipo baseado no ID (assumindo que assistentes têm IDs específicos)
+            $logger->determiningUserType($this->userId);
             $userType = $this->determineUserType($this->userId);
+            $logger->userTypeDetermined($this->userId, $userType);
+            
+            $logger->creatingChatUser($this->userId, $userType);
             $chatUser = ChatUserFactory::createFromChatUserData(
                 $this->userId,
                 $userType
             );
+            $logger->chatUserCreated($this->userId, $userType);
 
             // Verifica se o usuário ainda é participante do chat
+            $logger->checkingParticipant($this->userId, $this->chatId);
             if (!$chat->hasParticipant($chatUser)) {
+                $logger->participantNotFound($this->userId, $this->chatId);
                 throw new Exception('User is no longer a participant of this chat');
             }
+            $logger->participantFound($this->userId, $this->chatId);
 
             // Processa a mensagem usando o caso de uso
+            $logger->processingMessage($this->chatId, $this->userId, $this->messageType);
             $message = $useCase->execute(
                 $this->chatId,
                 $this->content,
@@ -77,19 +94,10 @@ class ProcessMessageJob implements ShouldQueue
                 $this->metadata
             );
 
-            Log::info('Message processed successfully', [
-                'chat_id' => $this->chatId,
-                'user_id' => $this->userId,
-                'message_id' => $message->id,
-                'message_type' => $this->messageType
-            ]);
+            $logger->messageProcessed($this->chatId, $this->userId, $message->id, $this->messageType);
 
         } catch (Exception $e) {
-            Log::error('Failed to process message job', [
-                'chat_id' => $this->chatId,
-                'user_id' => $this->userId,
-                'message_type' => $this->messageType,
-                'error' => $e->getMessage(),
+            $logger->jobFailed($e->getMessage(), [
                 'attempt' => $this->attempts()
             ]);
 
@@ -100,6 +108,8 @@ class ProcessMessageJob implements ShouldQueue
 
             throw $e; // Re-throw para acionar o mecanismo de retry
         }
+
+        $logger->jobCompleted();
     }
 
     /**
@@ -120,10 +130,10 @@ class ProcessMessageJob implements ShouldQueue
                 ]);
             }
         } catch (Exception $e) {
-            Log::error('Failed to create error message', [
-                'chat_id' => $this->chatId,
-                'error' => $e->getMessage()
+            $logger = new JobLogger('ProcessMessageJob', [
+                'chat_id' => $this->chatId
             ]);
+            $logger->error('Failed to create error message: ' . $e->getMessage());
         }
     }
 
@@ -132,12 +142,13 @@ class ProcessMessageJob implements ShouldQueue
      */
     public function failed(Exception $exception): void
     {
-        Log::error('Message processing job failed permanently', [
+        $logger = new JobLogger('ProcessMessageJob', [
             'chat_id' => $this->chatId,
             'user_id' => $this->userId,
-            'message_type' => $this->messageType,
-            'error' => $exception->getMessage()
+            'message_type' => $this->messageType
         ]);
+
+        $logger->jobFailed($exception->getMessage());
 
         // Cria mensagem de erro final
         $this->createErrorMessage();

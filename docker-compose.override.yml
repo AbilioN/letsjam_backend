@@ -30,7 +30,14 @@ services:
     ports:
       - "6379:6379"
 
-  queue:
+  queue_messages:
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  queue_events:
     volumes:
       - ./:/var/www
     environment:
