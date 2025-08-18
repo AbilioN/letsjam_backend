@@ -79,33 +79,38 @@ class ListenOpenAIResponses extends Command
                 try {
                     // Get response from the queue (FIFO)
                     $response = Redis::rpop($queueName);
+                    $this->info("📨 Response: " . $response);
                     
                     if ($response) {
                         $responseData = json_decode($response, true);
+                        $this->info("📨 Response data: " . json_encode($responseData));
                         
-                        if ($responseData && isset($responseData['id'])) {
+                        if ($responseData && isset($responseData['id'], $responseData['chat_id'], $responseData['user_id'])) {
                             $this->info("📨 Processing response: {$responseData['id']}");
                             
-                            // Extract chat_id and user_id from the response
-                            // Since Python doesn't send these, we'll need to get them from the original request
-                            $chatId = $this->getChatIdFromRequest($responseData['id']);
-                            $userId = $this->getUserIdFromRequest($responseData['id']);
+                            // Use chat_id and user_id directly from the response
+                            $chatId = $responseData['chat_id'];
+                            $userId = $responseData['user_id'];
+                            $responseText = $responseData['response'];
+                            $this->info("💬 Chat ID: {$chatId}, User ID: {$userId}");
                             
-                            if ($chatId && $userId) {
-                                // Dispatch job to process the response
-                                ProcessOpenAIResponse::dispatch(
-                                    $responseData['id'],
-                                    $chatId,
-                                    $userId
-                                );
-                                
-                                $this->info("✅ Job dispatched for response: {$responseData['id']}");
-                            } else {
-                                $this->warn("⚠️ Could not find chat_id or user_id for response: {$responseData['id']}");
-                            }
+                            // Dispatch job to process the response with the full response data
+                            ProcessOpenAIResponse::dispatch(
+                                $responseData['id'],
+                                $chatId,
+                                $userId,
+                                $responseText // Pass the full response string
+                            );
+                            
+                            $this->info("✅ Job dispatched for response: {$responseData['id']}");
+                            
                         } else {
-                            $this->warn("⚠️ Invalid response format");
+                            $this->warn("⚠️ Invalid response format - missing required fields");
+                            $this->warn("Required: id, chat_id, user_id");
+                            $this->warn("Received: " . implode(', ', array_keys($responseData ?? [])));
                         }
+                    }else{
+                        $this->warn("⚠️ No response found in queue");
                     }
                     
                     $queueLength--;
@@ -121,42 +126,6 @@ class ListenOpenAIResponses extends Command
         } catch (Exception $e) {
             Log::error('Error checking for OpenAI responses', ['error' => $e->getMessage()]);
             $this->error("❌ Error checking responses: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get chat_id from the original request (stored in Redis)
-     */
-    private function getChatIdFromRequest(string $requestId): ?int
-    {
-        try {
-            // Try to get from the original request data
-            $requestData = Redis::get("openai_request:{$requestId}");
-            if ($requestData) {
-                $data = json_decode($requestData, true);
-                return $data['chat_id'] ?? null;
-            }
-            return null;
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
-    /**
-     * Get user_id from the original request (stored in Redis)
-     */
-    private function getUserIdFromRequest(string $requestId): ?int
-    {
-        try {
-            // Try to get from the original request data
-            $requestData = Redis::get("openai_request:{$requestId}");
-            if ($requestData) {
-                $data = json_decode($requestData, true);
-                return $data['user_id'] ?? null;
-            }
-            return null;
-        } catch (Exception $e) {
-            return null;
         }
     }
 }
