@@ -36,18 +36,15 @@ class ChatController extends Controller
 
         $user = $request->user();
         $sender = ChatUserFactory::createFromModel($user);
-
         $receiver = ChatUserFactory::createFromChatUserData(
             $request->receiver_id,
             $request->receiver_type
         );
-
         $result = $sendMessageUseCase->execute(
             $request->content,
             $sender,
             $receiver
         );
-
         return response()->json($result, 201);
     }
 
@@ -86,7 +83,6 @@ class ChatController extends Controller
 
     public function getChatMessages(Request $request, $chatId, GetChatMessagesUseCase $useCase): JsonResponse
     {
-        // Validação removida - sempre retorna as 30 mensagens mais recentes
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
         try {

@@ -110,15 +110,10 @@ class ChatController extends Controller
     {
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-
         $page = $request->get('page', 1);
         $perPage = $request->get('per_page', 20);
-
         $chats = $this->getChatsUseCase->execute($chatUser, $page, $perPage);
-
-        // Convert domain entity to DTO for API response
         $dto = $chats->toDto();
-
         return response()->json([
             'success' => true,
             'data' => $dto->toArray()

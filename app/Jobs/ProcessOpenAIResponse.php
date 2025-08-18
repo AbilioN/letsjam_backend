@@ -120,21 +120,32 @@ class ProcessOpenAIResponse implements ShouldQueue
     private function createAssistantMessage(int $chatId, string $content): void
     {
         try {
-
             Log::info('Creating assistant message', [
                 'chat_id' => $chatId,
                 'content' => $content
             ]);
-
-            // Find the assistant in this chat
-            $assistant = DB::table('chat_user')
+            $assistantUser = DB::table('chat_user')
                 ->where('chat_id', $chatId)
                 ->where('user_type', 'assistant')
                 ->where('is_active', true)
                 ->first();
-            
-            if (!$assistant) {
-                Log::warning('No active assistant found in chat', [
+            if (!$assistantUser) {
+                Log::warning('No active assistant found in chat_user for chat', [
+                    'chat_id' => $chatId
+                ]);
+                // Fallback: create message directly
+                $this->createAIMessageFallback($chatId, $content);
+                return;
+            }
+            $assistantId = $assistantUser->user_id;
+            Log::info('Found assistant in chat_user', [
+                'chat_id' => $chatId,
+                'assistant_user_id' => $assistantId
+            ]);
+            $assistantModel = \App\Models\Assistant::find($assistantId);
+            if (!$assistantModel) {
+                Log::warning('Assistant model not found for user_id', [
+                    'assistant_user_id' => $assistantId,
                     'chat_id' => $chatId
                 ]);
                 // Fallback: create message directly
@@ -142,12 +153,12 @@ class ProcessOpenAIResponse implements ShouldQueue
                 return;
             }
             
-            $assistantId = $assistant->user_id;
-            
-            // Create ChatUser entity for the assistant
+            Log::info('Found assistant model', [
+                'assistant_id' => $assistantId,
+                'assistant_name' => $assistantModel->name,
+                'assistant_capabilities' => $assistantModel->capabilities
+            ]);
             $assistantChatUser = ChatUserFactory::createFromChatUserData($assistantId, 'assistant');
-            
-            // Use SendMessageToChatUseCase to create the message
             $sendMessageUseCase = app(SendMessageToChatUseCase::class);
             $message = $sendMessageUseCase->execute(
                 $chatId,
@@ -155,11 +166,11 @@ class ProcessOpenAIResponse implements ShouldQueue
                 $assistantChatUser,
                 'text'
             );
-            
             Log::info('Assistant message created using SendMessageToChatUseCase', [
                 'message_id' => $message->id,
                 'chat_id' => $chatId,
                 'assistant_id' => $assistantId,
+                'assistant_name' => $assistantModel->name,
                 'content' => $content
             ]);
             
@@ -168,8 +179,6 @@ class ProcessOpenAIResponse implements ShouldQueue
                 'chat_id' => $chatId,
                 'error' => $e->getMessage()
             ]);
-            
-            // Fallback: create message directly
             $this->createAIMessageFallback($chatId, $content);
         }
     }
