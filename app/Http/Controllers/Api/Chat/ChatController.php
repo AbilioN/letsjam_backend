@@ -64,9 +64,11 @@ class ChatController extends Controller
         if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
-        ProcessMessageJob::dispatch(
+        $chatUserType = $chatUser->getType();
+        ProcessMessageJob::dispatchSync(
             $chatId,
             $chatUser->getId(),
+            $chatUserType,
             $request->content,
             $request->message_type,
             $request->metadata

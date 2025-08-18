@@ -18,7 +18,6 @@ class SendMessageToChatUseCase
 
     public function execute(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
-        
         $message = $this->messageRepository->create(
             $chatId,
             $content,
@@ -28,8 +27,21 @@ class SendMessageToChatUseCase
         );
         Log::info('Dispatching MessageSent event for message ID: ' . $message->id);
         MessageSent::dispatch($message);
-        if($this->chatRepository->hasAssistant($chatId)) {
+        Log::info('MessageSent by sender ' . $sender->getName());
+        if ($this->chatRepository->hasAssistant($chatId) && $sender->getType() !== 'assistant') {
+            Log::info('Chat has assistant and sender is not assistant, dispatching OpenAI request', [
+                'chat_id' => $chatId,
+                'sender_type' => $sender->getType(),
+                'sender_id' => $sender->getId()
+            ]);
             $this->dispatchOpenAIRequest($chatId, $sender->getId(), $content);
+        } else {
+            Log::info('OpenAI request not dispatched', [
+                'chat_id' => $chatId,
+                'has_assistant' => $this->chatRepository->hasAssistant($chatId),
+                'sender_type' => $sender->getType(),
+                'reason' => $sender->getType() === 'assistant' ? 'Sender is assistant' : 'No assistant in chat'
+            ]);
         }
         return $message;
     }

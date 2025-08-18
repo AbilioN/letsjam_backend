@@ -28,6 +28,7 @@ class ProcessMessageJob implements ShouldQueue
     public function __construct(
         private int $chatId,
         private int $userId,
+        private string $userType,
         private string $content,
         private string $messageType,
         private ?array $metadata,
@@ -65,14 +66,12 @@ class ProcessMessageJob implements ShouldQueue
             }
             $logger->chatFound($this->chatId, $chat->name);
             $logger->determiningUserType($this->userId);
-            $userType = $this->determineUserType($this->userId, $assistantRepository);
-            $logger->userTypeDetermined($this->userId, $userType);
-            $logger->creatingChatUser($this->userId, $userType);
             $chatUser = ChatUserFactory::createFromChatUserData(
                 $this->userId,
-                $userType
+                $this->userType
             );
-            $logger->chatUserCreated($this->userId, $userType);
+
+            $logger->chatUserCreated($this->userId, $this->userType);
             $logger->checkingParticipant($this->userId, $this->chatId);
             if (!$chatRepository->hasParticipant($this->chatId, $chatUser)) {
                 $logger->participantNotFound($this->userId, $this->chatId);
@@ -80,6 +79,7 @@ class ProcessMessageJob implements ShouldQueue
             }
             $logger->participantFound($this->userId, $this->chatId);
             $logger->processingMessage($this->chatId, $this->userId, $this->messageType);
+
             $message = $useCase->execute(
                 $this->chatId,
                 $this->content,
