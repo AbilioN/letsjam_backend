@@ -145,4 +145,13 @@ class ChatRepository implements ChatRepositoryInterface
 
         return $chatModel->hasParticipant($user);
     }
+
+    public function hasAssistant(int $chatId): bool
+    {
+        return ChatModel::where('id', $chatId)
+            ->whereHas('users', function ($query) {
+                $query->where('user_type', 'assistant');
+            })
+            ->exists();
+    }
 } 
