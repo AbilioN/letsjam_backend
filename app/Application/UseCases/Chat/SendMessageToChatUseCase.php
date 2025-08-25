@@ -18,6 +18,12 @@ class SendMessageToChatUseCase
 
     public function execute(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
+        Log::info('Creating message', [
+            'chat_id' => $chatId,
+            'content' => $content,
+            'sender_type' => $sender->getType(),
+            'sender_id' => $sender->getId()
+        ]);
         $message = $this->messageRepository->create(
             $chatId,
             $content,

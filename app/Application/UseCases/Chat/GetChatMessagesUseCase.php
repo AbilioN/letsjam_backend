@@ -42,7 +42,6 @@ class GetChatMessagesUseCase
                 ->where('chat_id', $chatId)
                 ->where('user_id', $message['sender_id'])
                 ->value('user_type');
-
             return [
                 'id' => $message['id'],
                 'chat_id' => $message['chat_id'],

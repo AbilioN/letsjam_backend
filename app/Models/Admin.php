@@ -6,6 +6,7 @@ use App\Domain\Entities\ChatUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Domain\Entities\Admin as AdminEntity;
 use Laravel\Sanctum\HasApiTokens;
 
 class Admin extends Authenticatable implements ChatUser
@@ -47,6 +48,17 @@ class Admin extends Authenticatable implements ChatUser
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function toEntity(): ChatUser
+    {
+        return new AdminEntity(
+            id: $this->id,
+            name: $this->name,
+            email: $this->email,
+            password: $this->password,
+            isActive: $this->is_active
+        );
     }
 
     public function isActive(): bool

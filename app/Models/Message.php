@@ -70,7 +70,7 @@ class Message extends Model
     }
 
     /**
-     * Obtém o tipo do remetente baseado na tabela chat_user
+     * Obtém o tipo do sender baseado na tabela chat_user
      */
     public function getSenderTypeAttribute(): ?string
     {
@@ -130,7 +130,8 @@ class Message extends Model
      */
     public function isFromChatUser(ChatUser $chatUser): bool
     {
-        return $this->sender_id === $chatUser->getId();
+        return $this->sender_id === $chatUser->getId() && 
+               $this->sender_type === $chatUser->getType();
     }
 
     /**
@@ -147,6 +148,29 @@ class Message extends Model
     public function isFromAdmin(): bool
     {
         return $this->sender_type === 'admin';
+    }
+
+    /**
+     * Verifica se a mensagem é de um assistente
+     */
+    public function isFromAssistant(): bool
+    {
+        return $this->sender_type === 'assistant';
+    }
+
+    /**
+     * Obtém informações completas do sender
+     */
+    public function getSenderInfo(): array
+    {
+        return [
+            'sender_id' => $this->sender_id,
+            'sender_type' => $this->sender_type,
+            'sender_name' => $this->getSenderChatUser()?->getName(),
+            'is_user' => $this->isFromUser(),
+            'is_admin' => $this->isFromAdmin(),
+            'is_assistant' => $this->isFromAssistant()
+        ];
     }
 
     /**

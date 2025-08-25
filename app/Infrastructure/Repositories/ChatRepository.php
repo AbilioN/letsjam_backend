@@ -54,19 +54,27 @@ class ChatRepository implements ChatRepositoryInterface
         ->orderBy('updated_at', 'desc')
         ->paginate($perPage, ['*'], 'page', $page);
 
+
         $chats = $paginator->items();
         $chatEntities = array_map(function ($chatModel) use ($user) {
-            // return $chatModel->toEntityFromReciever($user);
-            return new \App\Domain\Entities\Chat(
-                id: $chatModel->id,
-                name: $chatModel->name ?? $chatModel->users->first()->name,
-                type: $chatModel->type,
-                description: $chatModel->description ?? '',
-                createdBy: $chatModel->created_by,
-                createdByType: $chatModel->created_by_type,
-                createdAt: $chatModel->created_at,
-                updatedAt: $chatModel->updated_at
-            );
+            // dd($chatModel->toEntityFromReciever($user), $user);
+
+            if(!$user)
+            {
+                dd('aqqui');
+            }
+            $chatEntityu =  $chatModel->toEntityFromReciever($user);
+            // return new \App\Domain\Entities\Chat(
+            //     id: $chatModel->id,
+            //     name: $chatModel->name ?? $chatModel->users->first()->name,
+            //     type: $chatModel->type,
+            //     description: $chatModel->description ?? '',
+            //     createdBy: $chatModel->created_by,
+            //     createdByType: $chatModel->created_by_type,
+            //     createdAt: $chatModel->created_at,
+            //     updatedAt: $chatModel->updated_at
+            // );
+            return $chatEntityu;
         }, $chats);
 
         return new \App\Domain\Entities\Chats(

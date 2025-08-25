@@ -18,20 +18,13 @@ class SendMessageUseCase
 
     public function execute(string $content, ChatUser $sender, ChatUser $receiver): array
     {
-        // Busca ou cria o chat privado entre os dois usuários
         $chatData = $this->chatRepository->findOrCreatePrivateChat($sender, $receiver);
-
-        // Cria a mensagem
         $message = $this->messageRepository->create(
             $chatData['id'],
             $content,
             $sender
         );
-
-        // Disparar evento para broadcast usando a entidade do Domain
         MessageSent::dispatch($message);
-
-        // Converte dados em entidade de domínio
         $chat = new Chat(
             id: $chatData['id'],
             name: $chatData['name'],
@@ -42,7 +35,6 @@ class SendMessageUseCase
             createdAt: $chatData['created_at'] ? new \DateTime($chatData['created_at']) : null,
             updatedAt: $chatData['updated_at'] ? new \DateTime($chatData['updated_at']) : null
         );
-
         return [
             'chat' => $chat->toDto()->toArray(),
             'message' => $message->toDto()->toArray()

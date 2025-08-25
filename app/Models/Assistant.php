@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Domain\Entities\Assistant as AssistantEntity;
+use App\Domain\Entities\ChatUser;
 
 class Assistant extends Model
 {
@@ -50,5 +52,17 @@ class Assistant extends Model
     public function hasCapability(string $capability): bool
     {
         return in_array($capability, $this->getCapabilities());
+    }
+
+    public function toEntity(): ChatUser
+    {
+        return new AssistantEntity(
+            id: $this->id,
+            name: $this->name,
+            description: $this->description,
+            avatar: $this->avatar,
+            capabilities: $this->getCapabilities(),
+            isActive: $this->is_active
+        );
     }
 }
