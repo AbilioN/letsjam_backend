@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Domain\Entities\User as UserEntity;
+use App\Domain\Entities\ChatUser;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -62,5 +64,16 @@ class User extends Authenticatable
     public function markEmailAsVerified(): void
     {
         $this->update(['email_verified_at' => now()]);
+    }
+
+    public function toEntity(): ChatUser
+    {
+        return new UserEntity(
+            id: $this->id,
+            name: $this->name,
+            email: $this->email,
+            password: $this->password,
+            emailVerifiedAt: $this->email_verified_at
+        );
     }
 }

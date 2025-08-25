@@ -45,6 +45,7 @@ class Chat extends Model
 
     public function toEntityFromReciever(ChatUser $reciever): ChatEntity
     {
+        // dd($reciever);
         // Busca o outro participante (não o receiver) baseado no tipo correto
         // Considera tanto ID quanto user_type para evitar conflitos
         $otherParticipant = $this->getAllParticipants()
@@ -57,6 +58,7 @@ class Chat extends Model
         if (!$otherParticipant) {
             throw new \Exception('Outro participante não encontrado');
         }
+
 
         return new ChatEntity(
             id: $this->id,
