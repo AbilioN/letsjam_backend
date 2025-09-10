@@ -32,8 +32,17 @@ WORKDIR /var/www
 # Copiar arquivos do projeto
 COPY . /var/www
 
-# Instalar dependências do PHP
-RUN composer install --no-dev --optimize-autoloader
+# Definir permissões antes de instalar dependências
+RUN chown -R akerfeels:akerfeels /var/www
+
+# Mudar para o usuário akerfeels antes de instalar dependências
+USER akerfeels
+
+# Copiar .env.example para .env se não existir
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
+# Instalar dependências do PHP (incluindo dev dependencies)
+RUN composer install --optimize-autoloader --verbose
 
 # Instalar dependências do Node.js
 RUN npm install
@@ -41,12 +50,12 @@ RUN npm install
 # Construir assets
 RUN npm run build
 
-# Definir permissões
-RUN chown -R akerfeels:akerfeels /var/www \
-    && chmod -R 755 /var/www/storage \
+# Definir permissões finais
+USER root
+RUN chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
 
-# Mudar para o usuário akerfeels
+# Voltar para o usuário akerfeels
 USER akerfeels
 
 # Expor porta 9000

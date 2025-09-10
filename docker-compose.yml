@@ -10,8 +10,23 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - vendor_data:/var/www/vendor
     networks:
       - lestjam_network
     depends_on:
@@ -27,7 +42,7 @@ services:
     ports:
       - "8006:80"
     volumes:
-      - ./:/var/www
+      - ./public:/var/www/public
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - lestjam_network
@@ -73,7 +88,21 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
     networks:
       - lestjam_network
     depends_on:
@@ -94,7 +123,21 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
     networks:
       - lestjam_network
     depends_on:
@@ -112,4 +155,6 @@ networks:
 
 volumes:
   dbdata:
+    driver: local
+  vendor_data:
     driver: local 
