@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Auth routes
-Route::post('/login', LoginController::class);
+Route::post('/login', LoginController::class);  
 Route::post('/register', RegisterController::class);
 Route::post('/verify-email', VerifyEmailController::class);
 Route::post('/resend-verification-code', ResendVerificationCodeController::class);

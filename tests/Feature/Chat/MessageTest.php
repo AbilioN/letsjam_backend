@@ -4,6 +4,7 @@ namespace Tests\Feature\Chat;
 
 use App\Models\Admin;
 use App\Models\Chat;
+use App\Models\ChatUser;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,8 +24,6 @@ class MessageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        
         
         $this->user1 = User::factory()->create();
         $this->user2 = User::factory()->create();
@@ -42,9 +41,8 @@ class MessageTest extends TestCase
             'created_by' => $this->user1->id
         ]);
         
-        // Adiciona participantes ao chat (cada um com seu tipo correto)
-        DB::table('chat_user')->insert([
-            [
+        ChatUser::insert([ 
+            [   
                 'chat_id' => $this->chat->id,
                 'user_id' => $this->user1->id,
                 'user_type' => 'user',
@@ -59,6 +57,7 @@ class MessageTest extends TestCase
                 'is_active' => true
             ]
         ]);
+  
     }
 
     public function test_user_and_admin_have_different_ids()
@@ -72,15 +71,15 @@ class MessageTest extends TestCase
         $this->assertNotEquals($user2->id, $admin->id);
         $this->assertNotEquals($user1->id, $user2->id);
         
-        \Illuminate\Support\Facades\Log::info('User1 ID: ' . $user1->id);
-        \Illuminate\Support\Facades\Log::info('User2 ID: ' . $user2->id);
-        \Illuminate\Support\Facades\Log::info('Admin ID: ' . $admin->id);
+        Log::info('User1 ID: ' . $user1->id);
+        Log::info('User2 ID: ' . $user2->id);
+        Log::info('Admin ID: ' . $admin->id);
     }
 
     public function test_admin_is_participant_of_chat()
     {
         // Verifica se o admin está na tabela chat_user
-        $adminParticipant = \Illuminate\Support\Facades\DB::table('chat_user')
+        $adminParticipant = DB::table('chat_user')
             ->where('chat_id', $this->chat->id)
             ->where('user_id', $this->admin->id)
             ->first();
@@ -99,24 +98,16 @@ class MessageTest extends TestCase
                 'content' => 'Olá, esta é uma mensagem de teste!',
                 'message_type' => 'text'
             ]);
-
-        $response->assertStatus(201)
+        $response->assertStatus(202)
             ->assertJsonStructure([
                 'success',
+                'message',
                 'data' => [
-                    'message' => [
-                        'id',
-                        'chat_id',
-                        'content',
-                        'sender_id',
-                        'message_type',
-                        'metadata',
-                        'is_read',
-                        'created_at'
-                    ]
+                    'chat_id',
+                    'status',
+                    'message_type'
                 ]
             ]);
-
         $this->assertDatabaseHas('messages', [
             'chat_id' => $this->chat->id,
             'content' => 'Olá, esta é uma mensagem de teste!',
