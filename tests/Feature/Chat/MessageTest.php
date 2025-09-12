@@ -7,6 +7,8 @@ use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class MessageTest extends TestCase
@@ -21,16 +23,16 @@ class MessageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         
-        // Cria usuários e admin
+        
         $this->user1 = User::factory()->create();
         $this->user2 = User::factory()->create();
         $this->admin = Admin::factory()->create();
         
-        // Debug: verifica os IDs
-        \Illuminate\Support\Facades\Log::info('User1 ID: ' . $this->user1->id);
-        \Illuminate\Support\Facades\Log::info('User2 ID: ' . $this->user2->id);
-        \Illuminate\Support\Facades\Log::info('Admin ID: ' . $this->admin->id);
+        Log::info('User1 ID: ' . $this->user1->id);
+        Log::info('User2 ID: ' . $this->user2->id);
+        Log::info('Admin ID: ' . $this->admin->id);
         
         // Cria chat privado
         $this->chat = Chat::create([
@@ -41,7 +43,7 @@ class MessageTest extends TestCase
         ]);
         
         // Adiciona participantes ao chat (cada um com seu tipo correto)
-        \Illuminate\Support\Facades\DB::table('chat_user')->insert([
+        DB::table('chat_user')->insert([
             [
                 'chat_id' => $this->chat->id,
                 'user_id' => $this->user1->id,

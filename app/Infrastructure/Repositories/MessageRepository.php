@@ -15,6 +15,7 @@ class MessageRepository implements MessageRepositoryInterface
             'chat_id' => $chatId,
             'content' => $content,
             'sender_id' => $sender->getId(),
+            'sender_type' => $sender->getType(),
             'message_type' => $messageType,
             'metadata' => $metadata,
             'is_read' => false,

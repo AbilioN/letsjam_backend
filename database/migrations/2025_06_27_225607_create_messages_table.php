@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('chat_id');
             $table->text('content');
             $table->unsignedBigInteger('sender_id'); // Apenas o ID, sem sender_type
+            $table->enum('sender_type', ['user', 'admin', 'assistant'])->default('user');
             $table->enum('message_type', ['text', 'image', 'file'])->default('text');
             $table->json('metadata')->nullable();
             $table->boolean('is_read')->default(false);
