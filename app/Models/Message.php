@@ -18,6 +18,7 @@ class Message extends Model
         'content',
         'sender_id',
         'message_type',
+        'sender_type',
         'metadata',
         'is_read',
         'read_at',
