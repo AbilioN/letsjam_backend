@@ -46,6 +46,7 @@ class ProcessMessageJob implements ShouldQueue
         AssistantRepositoryInterface $assistantRepository
     ): void
     {
+
         $logger = new JobLogger('ProcessMessageJob', [
             'chat_id' => $this->chatId,
             'user_id' => $this->userId,
