@@ -187,15 +187,11 @@ class ChatController extends Controller
             ]);
     
             $user = $request->user();
-
             $chatUser = ChatUserFactory::createFromModel($user);
-            // dd($chatUser);
-            // Cria ChatUser para o outro usuário
             $otherChatUser = ChatUserFactory::createFromChatUserData(
                 $request->other_user_id,
                 $request->other_user_type
             );
-
             $chat = $useCase->execute($chatUser, $otherChatUser);
             DB::commit();   
             return response()->json([

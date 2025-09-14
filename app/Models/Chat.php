@@ -248,19 +248,25 @@ class Chat extends Model
      */
     public static function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): self
     {
-        // Busca um chat privado que contenha exatamente esses dois usuários
         $chat = self::where('type', 'private')
             ->whereHas('users', function ($query) use ($user1) {
-                $query->where('user_id', $user1->getId());
+                $query->where('user_id', $user1->getId())
+                      ->where('user_type', $user1->getType());
             })
             ->whereHas('users', function ($query) use ($user2) {
-                $query->where('user_id', $user2->getId());
+                $query->where('user_id', $user2->getId())
+                      ->where('user_type', $user2->getType());
             })
             ->whereDoesntHave('users', function ($query) use ($user1, $user2) {
-                $query->whereNotIn('user_id', [$user1->getId(), $user2->getId()]);
+                $query->where(function ($subQuery) use ($user1, $user2) {
+                    $subQuery->where('user_id', '!=', $user1->getId())
+                             ->orWhere('user_type', '!=', $user1->getType());
+                })->where(function ($subQuery) use ($user1, $user2) {
+                    $subQuery->where('user_id', '!=', $user2->getId())
+                             ->orWhere('user_type', '!=', $user2->getType());
+                });
             })
             ->first();
-
         if (!$chat) {
             // Cria um novo chat privado
             $chat = self::create([
@@ -297,7 +303,7 @@ class Chat extends Model
      */
     public function removeParticipant(ChatUser $chatUser): void
     {
-        $this->users()->detach($chatUser->getId());
+        $this->users()->wherePivot('user_type', $chatUser->getType())->detach($chatUser->getId());
     }
 
     /**
@@ -305,7 +311,10 @@ class Chat extends Model
      */
     public function hasParticipant(ChatUser $chatUser): bool
     {
-        return $this->users()->where('user_id', $chatUser->getId())->exists();
+        return $this->users()
+            ->where('user_id', $chatUser->getId())
+            ->wherePivot('user_type', $chatUser->getType())
+            ->exists();
     }
 
     /**
@@ -321,9 +330,11 @@ class Chat extends Model
      */
     public function markAsReadForChatUser(ChatUser $chatUser): void
     {
-        $this->users()->updateExistingPivot($chatUser->getId(), [
-            'last_read_at' => now()
-        ]);
+        $this->users()
+            ->wherePivot('user_type', $chatUser->getType())
+            ->updateExistingPivot($chatUser->getId(), [
+                'last_read_at' => now()
+            ]);
 
         // Marca mensagens não lidas como lidas
         $this->messages()

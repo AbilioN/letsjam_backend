@@ -26,13 +26,10 @@ class MessageRepository implements MessageRepositoryInterface
     public function findById(int $id): ?Message
     {
         $messageModel = MessageModel::find($id);
-        
         if (!$messageModel) {
             return null;
         }
-
-        // Cria ChatUser baseado no tipo
-        $sender = \App\Domain\Entities\ChatUserFactory::createFromChatUserData(
+        $sender = ChatUserFactory::createFromChatUserData(
             $messageModel->sender_id,
             $messageModel->sender_type ?? 'user'
         );
