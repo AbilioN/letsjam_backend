@@ -308,22 +308,22 @@ class MessageTest extends TestCase
         $this->assertEquals($message3->id, $messages[2]->id);
     }
 
-    public function test_message_has_no_sender_type_field()
+    public function test_message_has_sender_type_field()
     {
         $message = Message::create([
             'chat_id' => $this->chat->id,
-            'content' => 'Teste sem sender_type',
+            'content' => 'Teste com sender_type',
             'sender_id' => $this->user->id,
+            'sender_type' => 'user',
             'message_type' => 'text',
             'is_read' => false
         ]);
-
-        // Verifica que o campo sender_type não existe na tabela
         $messageData = \Illuminate\Support\Facades\DB::table('messages')
             ->where('id', $message->id)
             ->first();
 
-        $this->assertObjectNotHasProperty('sender_type', $messageData);
+        $this->assertObjectHasProperty('sender_type', $messageData);
+        $this->assertEquals('user', $messageData->sender_type);
     }
 
     public function test_can_access_metadata_as_array()

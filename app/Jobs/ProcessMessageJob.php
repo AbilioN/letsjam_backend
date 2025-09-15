@@ -126,7 +126,7 @@ class ProcessMessageJob implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(Exception $exception): void
+    public function failed(\Throwable $exception): void
     {
         $logger = new JobLogger('ProcessMessageJob', [
             'chat_id' => $this->chatId,

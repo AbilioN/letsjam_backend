@@ -39,7 +39,7 @@ Route::post('/resend-verification-code', ResendVerificationCodeController::class
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/chat/create-private', [ChatController::class, 'createPrivateChat']);
     Route::post('/chat/create-group', [ChatController::class, 'createGroupChat']);
-    Route::post('/chat/send', [ChatController::class, 'sendMessage']);
+    // Route::post('/chat/send', [ChatController::class, 'sendMessage']);
     Route::post('/chat/{chatId}/send', [ChatController::class, 'sendMessageToChat']);
     Route::get('/chat/{chatId}/messages', [ChatController::class, 'getChatMessages']);
     Route::post('/chat/{chatId}/read', [ChatController::class, 'markMessagesAsRead']);
@@ -61,12 +61,12 @@ Route::prefix('admin')->group(function () {
         Route::get('/users/{id}', [UserController::class, 'show']);
         
         // Admin chat routes
-        Route::prefix('chat')->group(function () {
-            Route::get('/conversations', [AdminChatController::class, 'getConversations']);
-            Route::get('/conversation', [AdminChatController::class, 'getConversationWithUser']);
-            Route::post('/send', [AdminChatController::class, 'sendMessageToUser']);
-            Route::post('/create-private', [ChatController::class, 'createPrivateChat']);
-        });
+        // Route::prefix('chat')->group(function () {
+        //     Route::get('/conversations', [AdminChatController::class, 'getConversations']);
+        //     Route::get('/conversation', [AdminChatController::class, 'getConversationWithUser']);
+        //     Route::post('/send', [AdminChatController::class, 'sendMessageToUser']);
+        //     Route::post('/create-private', [ChatController::class, 'createPrivateChat']);
+        // });
     });
 });
 

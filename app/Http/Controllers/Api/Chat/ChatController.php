@@ -101,16 +101,11 @@ class ChatController extends Controller
     {
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
-
-        // Verifica se o usuário é participante do chat
         $chat = Chat::findOrFail($chatId);
         if (!$chat->hasParticipant($chatUser)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
-
-        // Marca mensagens como lidas usando a abstração ChatUser
         $chat->markAsReadForChatUser($chatUser);
-
         return response()->json([
             'success' => true,
             'data' => ['message' => 'Messages marked as read']
@@ -200,8 +195,8 @@ class ChatController extends Controller
             ], 201);
         } catch (\Exception $e) {
 
-            dd($e->getMessage());
-            dd( $e->getLine(), $e->getFile());
+            // dd($e->getMessage());
+            // dd( $e->getLine(), $e->getFile());
             DB::rollBack();
             return response()->json([
                 'success' => false,

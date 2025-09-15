@@ -67,21 +67,14 @@ class AdminAuthMiddlewareTest extends TestCase
 
     public function test_inactive_admin_cannot_access_protected_route()
     {
-        // Arrange - Criar admin inativo diretamente no banco
         $admin = Admin::factory()->inactive()->create([
             'email' => 'admin@lestjam.com',
             'password' => bcrypt('password123')
         ]);
-
-        // Criar um token manualmente para o admin inativo
         $token = $admin->createToken('test-token')->plainTextToken;
-
-        // Act
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token
         ])->getJson('/api/admin/dashboard');
-
-        // Assert
         $response->assertStatus(403)
             ->assertJson([
                 'message' => 'Access denied. Admin privileges required.'

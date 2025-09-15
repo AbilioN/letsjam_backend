@@ -8,7 +8,7 @@ use App\Application\UseCases\Chat\GetChatMessagesUseCase;
 use App\Domain\Entities\ChatUser;
 use App\Domain\Repositories\ChatRepositoryInterface;
 use App\Domain\Repositories\MessageRepositoryInterface;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use Mockery;
 
 class GetChatMessagesUseCaseTest extends TestCase

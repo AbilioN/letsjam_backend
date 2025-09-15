@@ -35,7 +35,7 @@ class Chat extends Model
             id: $this->id,
             name: $this->name,
             type: $this->type,
-            description: $this->description,
+            description: $this->description ?? '',
             createdBy: $this->created_by,
             createdByType: $this->created_by_type,
             createdAt: $this->created_at,

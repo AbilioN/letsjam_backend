@@ -35,85 +35,67 @@ class ChatControllerWithChatUserTest extends TestCase
 
     public function test_can_send_message_to_chat_using_chat_user_abstraction()
     {
-        // Autentica como usuário
         Sanctum::actingAs($this->user);
-
-        // Adiciona participantes ao chat
         $userChatUser = ChatUserFactory::createFromModel($this->user);
         $adminChatUser = ChatUserFactory::createFromModel($this->admin);
-        
         $this->chat->addParticipant($userChatUser);
         $this->chat->addParticipant($adminChatUser);
-
         $response = $this->postJson("/api/chat/{$this->chat->id}/send", [
             'content' => 'Olá, mundo!',
             'message_type' => 'text',
             'metadata' => ['key' => 'value']
         ]);
-
-        $response->assertStatus(201);
+        $response->assertStatus(202);
         $response->assertJsonStructure([
             'success',
+            'message',
             'data' => [
-                'message' => [
-                    'id',
-                    'chat_id',
-                    'content',
-                    'sender_id',
-                    'sender_type',
-                    'message_type',
-                    'metadata',
-                    'is_read',
-                    'created_at'
-                ]
+                'chat_id',
+                'status',
+                'message_type'
             ]
         ]);
-
-        $messageData = $response->json('data.message');
-        $this->assertEquals($this->user->id, $messageData['sender_id']);
-        $this->assertEquals('user', $messageData['sender_type']);
-        $this->assertEquals('Olá, mundo!', $messageData['content']);
-        $this->assertEquals(['key' => 'value'], $messageData['metadata']);
+        $responseData = $response->json('data');
+        $this->assertEquals($this->chat->id, $responseData['chat_id']);
+        $this->assertEquals('queued', $responseData['status']);
+        $this->assertEquals('text', $responseData['message_type']);
     }
 
     public function test_can_send_message_to_chat_as_admin_using_chat_user_abstraction()
     {
-        // Autentica como admin
         Sanctum::actingAs($this->admin);
-
-        // Adiciona participantes ao chat
         $userChatUser = ChatUserFactory::createFromModel($this->user);
         $adminChatUser = ChatUserFactory::createFromModel($this->admin);
-        
         $this->chat->addParticipant($userChatUser);
         $this->chat->addParticipant($adminChatUser);
-
         $response = $this->postJson("/api/chat/{$this->chat->id}/send", [
             'content' => 'Mensagem do admin',
             'message_type' => 'text'
         ]);
-
-        $response->assertStatus(201);
+        $response->assertStatus(202);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'chat_id',
+                'status',
+                'message_type'
+            ]
+        ]);
         
-        $messageData = $response->json('data.message');
-        $this->assertEquals($this->admin->id, $messageData['sender_id']);
-        $this->assertEquals('admin', $messageData['sender_type']);
-        $this->assertEquals('Mensagem do admin', $messageData['content']);
+        $responseData = $response->json('data');
+        $this->assertEquals($this->chat->id, $responseData['chat_id']);
+        $this->assertEquals('queued', $responseData['status']);
+        $this->assertEquals('text', $responseData['message_type']);
     }
 
     public function test_can_mark_messages_as_read_using_chat_user_abstraction()
     {
-        // Autentica como usuário
         Sanctum::actingAs($this->user);
-
-        // Adiciona participantes ao chat
         $userChatUser = ChatUserFactory::createFromModel($this->user);
         $adminChatUser = ChatUserFactory::createFromModel($this->admin);
-        
         $this->chat->addParticipant($userChatUser);
         $this->chat->addParticipant($adminChatUser);
-
-        // Cria mensagens não lidas
         Message::create([
             'chat_id' => $this->chat->id,
             'content' => 'Mensagem não lida 1',
@@ -121,7 +103,6 @@ class ChatControllerWithChatUserTest extends TestCase
             'message_type' => 'text',
             'is_read' => false
         ]);
-
         Message::create([
             'chat_id' => $this->chat->id,
             'content' => 'Mensagem não lida 2',
@@ -129,16 +110,12 @@ class ChatControllerWithChatUserTest extends TestCase
             'message_type' => 'text',
             'is_read' => false
         ]);
-
         $response = $this->postJson("/api/chat/{$this->chat->id}/read");
-
         $response->assertStatus(200);
         $response->assertJson([
             'success' => true,
             'data' => ['message' => 'Messages marked as read']
         ]);
-
-        // Verifica se as mensagens foram marcadas como lidas
         $unreadMessages = $this->chat->messages()->where('is_read', false)->get();
         $this->assertCount(0, $unreadMessages);
     }
